@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="MedChain — histórico de saúde seguro e controlado pelo paciente." />
+    <title>MedChain | Histórico de saúde seguro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Navegação principal">
+        <a class="brand" href="#" aria-label="Página inicial MedChain">
+          <span class="brand-mark" aria-hidden="true">✦</span>
+          <span>Med<span>Chain</span></span>
+        </a>
+        <nav>
+          <a class="nav-link active" href="#inicio" data-view="inicio"><span>⌂</span> Visão geral</a>
+          <a class="nav-link" href="#historico" data-view="historico"><span>▤</span> Meu histórico</a>
+          <a class="nav-link" href="#vacinas" data-view="vacinas"><span>✚</span> Vacinas</a>
+          <a class="nav-link" href="#acessos" data-view="acessos"><span>⌘</span> Acessos</a>
+        </nav>
+        <div class="sidebar-card">
+          <span class="shield">✓</span>
+          <strong>Seus dados protegidos</strong>
+          <p>Registros criptografados e sob o seu controle.</p>
+          <button class="text-button" data-action="security">Ver segurança →</button>
+        </div>
+        <div class="profile-mini">
+          <div class="avatar">MC</div>
+          <div><strong>Marina Costa</strong><small>Paciente verificada</small></div>
+          <button aria-label="Mais opções">•••</button>
+        </div>
+      </aside>
+
+      <main>
+        <header class="topbar">
+          <button class="menu-toggle" aria-label="Abrir menu">☰</button>
+          <div class="status-pill"><i></i> Carteira conectada</div>
+          <div class="top-actions">
+            <button class="icon-button" aria-label="Notificações">♢<span class="notification-dot"></span></button>
+            <button class="primary-button" data-action="share">Compartilhar acesso</button>
+          </div>
+        </header>
+
+        <section class="view active" id="inicio">
+          <div class="welcome-row">
+            <div><p class="eyebrow">QUARTA-FEIRA, 12 DE AGOSTO</p><h1>Olá, Marina! <span>👋</span></h1><p>Seu histórico de saúde, completo e seguro, em um só lugar.</p></div>
+            <button class="secondary-button" data-action="new-record">＋ Adicionar registro</button>
+          </div>
+
+          <div class="security-banner">
+            <div class="lock-icon">⌾</div>
+            <div><strong>Seu cofre digital está protegido</strong><p>Última verificação de integridade realizada hoje, às 08:42.</p></div>
+            <span>100% seguro</span>
+          </div>
+
+          <div class="stats-grid">
+            <article class="stat-card"><div class="stat-icon blue">▤</div><div><small>Registros médicos</small><strong id="record-count">12</strong><p><b>+2</b> nos últimos 30 dias</p></div></article>
+            <article class="stat-card"><div class="stat-icon green">✚</div><div><small>Vacinas em dia</small><strong>8 de 9</strong><p>Próxima em 24 de set.</p></div></article>
+            <article class="stat-card"><div class="stat-icon purple">⌘</div><div><small>Acessos autorizados</small><strong id="access-count">3</strong><p>2 médicos e 1 laboratório</p></div></article>
+          </div>
+
+          <div class="content-grid">
+            <section class="panel timeline-panel">
+              <div class="panel-head"><div><h2>Atividades recentes</h2><p>Últimas atualizações no seu histórico</p></div><button class="text-button" data-action="all-records">Ver histórico completo →</button></div>
+              <div class="timeline" id="timeline"></div>
+            </section>
+            <aside class="panel vaccine-panel">
+              <div class="panel-head"><div><h2>Carteira de vacinação</h2><p>Acompanhe suas doses</p></div><span class="vaccine-icon">✚</span></div>
+              <div class="progress-ring" aria-label="89% das vacinas em dia"><svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="51"/><circle class="progress" cx="60" cy="60" r="51"/></svg><div><strong>89%</strong><small>em dia</small></div></div>
+              <div class="next-vaccine"><span>PRÓXIMA DOSE</span><strong>Influenza (Gripe)</strong><p>24 de setembro de 2026</p><small>Posto de Saúde Central</small></div>
+              <button class="wide-button" data-view-link="vacinas">Ver carteira completa</button>
+            </aside>
+          </div>
+
+          <section class="panel access-panel">
+            <div class="panel-head"><div><h2>Quem tem acesso</h2><p>Profissionais e instituições autorizadas</p></div><button class="text-button" data-view-link="acessos">Gerenciar acessos →</button></div>
+            <div class="access-list" id="access-preview"></div>
+          </section>
+        </section>
+
+        <section class="view" id="historico"><div class="page-title"><div><p class="eyebrow">PRONTUÁRIO INTEGRADO</p><h1>Meu histórico</h1><p>Consultas, exames, diagnósticos e procedimentos.</p></div><button class="primary-button" data-action="new-record">＋ Novo registro</button></div><div class="panel"><div class="filters"><input id="record-search" type="search" placeholder="Buscar no histórico..."/><select id="record-filter"><option value="all">Todos os tipos</option><option>Consulta</option><option>Exame</option><option>Procedimento</option></select></div><div class="records-table" id="records-table"></div></div></section>
+        <section class="view" id="vacinas"><div class="page-title"><div><p class="eyebrow">IMUNIZAÇÃO</p><h1>Carteira de vacinação</h1><p>Registro nacional consolidado das suas vacinas.</p></div></div><div class="panel empty-feature"><span>✚</span><h2>8 de 9 vacinas em dia</h2><p>Sua próxima dose de Influenza está prevista para 24 de setembro.</p><button class="primary-button" data-action="new-vaccine">Registrar vacina</button></div></section>
+        <section class="view" id="acessos"><div class="page-title"><div><p class="eyebrow">PRIVACIDADE</p><h1>Controle de acessos</h1><p>Você decide quem pode consultar seus dados e por quanto tempo.</p></div><button class="primary-button" data-action="share">＋ Novo acesso</button></div><div class="panel"><div class="access-list detailed" id="access-list"></div></div></section>
+      </main>
+    </div>
+
+    <dialog id="app-dialog"><form method="dialog" id="dialog-form"><button class="dialog-close" value="cancel" aria-label="Fechar">×</button><div id="dialog-content"></div></form></dialog>
+    <div class="toast" role="status" aria-live="polite" id="toast"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
