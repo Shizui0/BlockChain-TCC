@@ -1,0 +1,49 @@
+import { afterEach, beforeEach, describe, test } from 'node:test';
+import assert from 'node:assert/strict';
+import { createTestContext, DEMO_USERS, loginAgent } from './test-helpers.js';
+
+describe('registros cifrados e integridade', () => {
+  let context;
+  let patient;
+  beforeEach(async () => {
+    context = await createTestContext();
+    patient = await loginAgent(context.app, DEMO_USERS.patient.email);
+  });
+  afterEach(() => context.database.close());
+
+  test('cria, persiste cifrado e recupera um registro', async () => {
+    const secret = 'CONTEUDO-CLINICO-SINTETICO-UNICO';
+    const created = await patient.post('/api/records').send({
+      resourceType: 'Observation',
+      clinicalData: { code: 'Teste laboratorial fictício', value: secret, status: 'final' }
+    });
+    assert.equal(created.status, 201);
+    const raw = context.database.prepare('SELECT * FROM medical_records WHERE id = ?').get(created.body.record.id);
+    assert.equal(JSON.stringify(raw).includes(secret), false);
+    assert.equal(raw.key_version, 'test-v1');
+
+    const retrieved = await patient.get(`/api/records/${created.body.record.id}`);
+    assert.equal(retrieved.status, 200);
+    assert.equal(retrieved.body.record.clinicalData.value, secret);
+  });
+
+  test('confirma hash correto e detecta alteração proposital', async () => {
+    const created = await patient.post('/api/records').send({
+      resourceType: 'Observation',
+      clinicalData: { code: 'Integridade sintética', value: 'íntegro' }
+    });
+    const recordId = created.body.record.id;
+    const valid = await patient.get(`/api/records/${recordId}/integrity`);
+    assert.equal(valid.status, 200);
+    assert.equal(valid.body.valid, true);
+    assert.equal(valid.body.algorithm, 'SHA-256');
+
+    const raw = context.database.prepare('SELECT ciphertext FROM medical_records WHERE id = ?').get(recordId);
+    const replacement = `${raw.ciphertext[0] === 'A' ? 'B' : 'A'}${raw.ciphertext.slice(1)}`;
+    context.database.prepare('UPDATE medical_records SET ciphertext = ? WHERE id = ?').run(replacement, recordId);
+    const invalid = await patient.get(`/api/records/${recordId}/integrity`);
+    assert.equal(invalid.status, 200);
+    assert.equal(invalid.body.valid, false);
+    assert.equal(invalid.body.databaseValid, false);
+  });
+});
