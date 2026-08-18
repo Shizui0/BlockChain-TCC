@@ -2,9 +2,9 @@
   "name": "medchain-tcc",
   "version": "0.1.0",
   "private": true,
-  "description": "Protótipo de prontuário médico seguro e controlado pelo paciente",
+  "description": "MVP de prontuário médico seguro e controlado pelo paciente",
   "scripts": {
-    "start": "python3 -m http.server 4173",
-    "check": "node --check app.js"
+    "start": "python3 -m http.server 4173 --directory frontend/public",
+    "check": "node --check frontend/public/app.js"
   }
 }

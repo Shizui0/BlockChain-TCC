@@ -12,6 +12,10 @@ build/
 .vscode/
 .idea/
 coverage/
+backend/data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
 /.sass-cache
 *.log
 *.tgz
