@@ -33,8 +33,8 @@ export async function createApp(options = {}) {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        styleSrc: ["'self'", 'https://fonts.googleapis.com'],
-        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+        styleSrc: ["'self'"],
+        fontSrc: ["'self'", 'data:'],
         scriptSrc: ["'self'"],
         imgSrc: ["'self'", 'data:'],
         connectSrc: ["'self'"]
@@ -50,6 +50,10 @@ export async function createApp(options = {}) {
   }));
   app.use(express.json({ limit: '64kb', type: 'application/json' }));
   app.use(cookieParser());
+  app.use('/api', (_request, response, next) => {
+    response.set('Cache-Control', 'no-store');
+    next();
+  });
 
   const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,

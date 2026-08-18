@@ -33,6 +33,7 @@ describe('autenticação', () => {
     assert.equal(response.status, 200);
     assert.equal(response.body.user.role, 'PATIENT');
     assert.equal('token' in response.body, false);
+    assert.equal(response.headers['cache-control'], 'no-store');
     assert.match(response.headers['set-cookie'][0], /HttpOnly/);
     assert.match(response.headers['set-cookie'][0], /SameSite=Strict/);
   });
