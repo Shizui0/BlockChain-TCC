@@ -61,6 +61,7 @@ export async function createApp(options = {}) {
   app.use('/api/auth', authLimiter, createAuthRouter({ database, config, audit: services.audit }));
 
   const authenticate = createAuthMiddleware(config, database);
+  app.get('/api/me', authenticate, (request, response) => response.json({ user: request.user }));
   app.use('/api/patients', authenticate, requireRole('PATIENT'), createPatientsRouter(database));
   app.use('/api/professionals', authenticate, createProfessionalsRouter(database));
   app.use('/api/records', authenticate, createRecordsRouter(services.records));
