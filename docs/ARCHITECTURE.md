@@ -1,39 +1,75 @@
-# Arquitetura proposta
+# Arquitetura do MVP
 
-## Princípios
+## Objetivos
 
-1. **Privacidade por padrão:** nenhum dado clínico é público ou registrado diretamente no ledger.
-2. **Controle do paciente:** acessos são explícitos, temporários, revogáveis e auditáveis.
-3. **Interoperabilidade:** recursos clínicos seguem o padrão HL7 FHIR.
-4. **Defesa em profundidade:** criptografia em trânsito e em repouso, MFA, segregação de funções e rotação de chaves.
-5. **Evolução segura:** o protótipo visual não deve receber dados reais até que backend, identidade e governança estejam implementados e validados.
+- manter dados clínicos fora do ledger;
+- dar ao paciente controle explícito sobre acessos;
+- separar confidencialidade, integridade e auditoria;
+- produzir um MVP pequeno e substituível, não uma infraestrutura assistencial completa.
 
-## Componentes futuros
+## Camadas
 
 ```text
-Web do paciente / Portal profissional
-                │
-          API Gateway + WAF
-                │
-      API clínica compatível FHIR
-       ├── Identidade e consentimento
-       ├── Cofre criptografado de documentos
-       ├── Banco clínico transacional
-       └── Ledger permissionado (hashes e auditoria)
+Browser
+  └─ frontend/public: interface sem armazenamento clínico local
+        └─ API REST Express
+             ├─ autenticação JWT/cookie
+             ├─ validação e autorização
+             ├─ serviços de domínio
+             │    ├─ CryptoService
+             │    ├─ RecordService
+             │    ├─ ConsentService
+             │    ├─ AuditService
+             │    ├─ IntegrityService
+             │    └─ LedgerService
+             └─ SQLite via consultas preparadas
 ```
 
-## Modelo de confiança
+## Modelo de dados
 
-- O dado clínico permanece fora da blockchain, cifrado com uma chave de dados por paciente.
-- A chave privada do paciente não é enviada ao servidor; recuperação deve usar chaves sociais/institucionais com consentimento e política documentada.
-- O ledger registra apenas hashes, concessões, revogações e identificadores não diretamente atribuíveis.
-- Instituições são identificadas por certificados e todos os acessos geram eventos de auditoria.
+| Tabela | Responsabilidade |
+|---|---|
+| `users` | Identidade, papel e hash bcrypt |
+| `patients` | Perfil de paciente sintético |
+| `professionals` | Registro profissional/organizacional sintético |
+| `medical_records` | Payload clínico cifrado e metadados mínimos |
+| `record_integrity` | SHA-256 do registro protegido |
+| `consents` | Permissão, expiração e revogação |
+| `audit_events` | Quem realizou qual ação e quando |
+| `ledger_events` | Mock persistente de hashes e consentimentos pseudonimizados |
+| `family_history` | Histórico familiar cifrado |
 
-## Roadmap
+## Criação de registro
 
-1. Definir personas, jornadas e requisitos legais com orientação especializada em LGPD e saúde.
-2. Criar backend, banco e autenticação OpenID Connect com MFA.
-3. Modelar recursos FHIR (`Patient`, `Encounter`, `Observation`, `Immunization`, `Consent`).
-4. Implementar envelope encryption com KMS/HSM e trilha de auditoria.
-5. Adicionar ledger permissionado após validar a necessidade e o modelo de governança.
-6. Executar testes automatizados, threat modeling, pentest e piloto com dados sintéticos.
+```text
+JSON clínico validado
+  → serialização canônica
+  → AES-256-GCM + IV aleatório + AAD
+  → medical_records
+  → projeção determinística do registro protegido
+  → SHA-256
+  → record_integrity + LedgerService
+  → RECORD_CREATED na auditoria
+```
+
+AES-256-GCM fornece confidencialidade e autenticação do ciphertext. SHA-256 fornece uma impressão determinística para comparar integridade e registrar uma prova fora do armazenamento clínico.
+
+## Autorização
+
+- paciente acessa somente o próprio prontuário;
+- administrador possui caminho técnico reservado, ainda sem interface;
+- profissional precisa de consentimento não revogado, não expirado e compatível com `READ` ou `WRITE`;
+- cada falha gera `ACCESS_DENIED` associada ao paciente e sem conteúdo clínico;
+- a revogação atualiza o consentimento dentro de transação e afeta a próxima requisição.
+
+## Migração para PostgreSQL
+
+1. substituir `db/database.js` por pool PostgreSQL;
+2. converter o schema em migrações versionadas;
+3. manter os serviços e contratos REST;
+4. usar transações com isolamento explícito;
+5. criar papéis de banco separados para aplicação, migração e leitura operacional.
+
+## Evolução criptográfica
+
+O MVP usa uma chave mestra externa ao código. A evolução recomendada é envelope encryption: uma DEK aleatória por paciente ou registro cifra o dado; a DEK é cifrada por uma KEK mantida em KMS/HSM. A referência e a versão da chave permanecem no banco, permitindo rotação sem expor material criptográfico.
