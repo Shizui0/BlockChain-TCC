@@ -16,6 +16,8 @@ MVP acadêmico de histórico médico controlado pelo paciente, com registros cl�
 8. O profissional consulta os registros permitidos; a visualização é auditada.
 9. O paciente revoga o consentimento e novos acessos são negados imediatamente.
 10. A tentativa negada gera `ACCESS_DENIED` e a integridade pode ser verificada novamente.
+11. Um prontuário PDF/PNG/JPEG pode ser enviado por multipart; os bytes recebem SHA-256 e são cifrados antes da gravação em `backend/data/uploads`.
+12. Download e verificação exigem autorização de leitura; nenhum arquivo original é mantido em plaintext no servidor.
 
 ## Arquitetura
 
@@ -60,6 +62,8 @@ npm install
 npm run dev
 ```
 
+Uploads aceitam PDF, PNG e JPEG de até 10 MiB por padrão. `UPLOAD_DIRECTORY` e `MAX_UPLOAD_BYTES` permitem alterar o diretório cifrado e o limite; mantenha o diretório sempre fora do Git.
+
 Acesse `http://localhost:4173`. Com `SEED_DEMO=true`, o servidor cria os dados sintéticos de forma idempotente. Também é possível executar `npm run seed` manualmente.
 
 ### Contas sintéticas
@@ -98,6 +102,9 @@ npm run check  # valida sintaxe de backend, testes e frontend
 | POST/GET | `/api/records` | Criar ou listar registros autorizados |
 | GET | `/api/records/:id` | Consultar um registro autorizado |
 | GET | `/api/records/:id/integrity` | Verificar SHA-256 e ledger local |
+| POST/GET | `/api/documents` | Enviar multipart ou listar prontuários cifrados |
+| GET | `/api/documents/:id/content` | Baixar prontuário autorizado após validar integridade |
+| GET | `/api/documents/:id/integrity` | Verificar SHA-256 do conteúdo e da projeção protegida |
 | POST/GET | `/api/consents` | Conceder ou listar consentimentos |
 | DELETE | `/api/consents/:id` | Revogar imediatamente |
 | GET | `/api/audit` | Auditoria do paciente |
@@ -108,6 +115,8 @@ npm run check  # valida sintaxe de backend, testes e frontend
 - bcrypt com custo 12 para senhas;
 - JWT assinado em cookie `HttpOnly`, `SameSite=Strict` e `Secure` em produção;
 - AES-256-GCM com IV aleatório e AAD vinculando o contexto do registro;
+- prontuários cifrados em memória antes da persistência, com nome e descrição também cifrados;
+- validação de assinatura para PDF, PNG e JPEG, limite de tamanho e armazenamento com nome aleatório;
 - SHA-256 separado da criptografia para verificação de integridade;
 - validação estrita com Zod;
 - consultas preparadas;

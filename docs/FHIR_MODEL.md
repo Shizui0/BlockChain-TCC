@@ -11,6 +11,7 @@ O MedChain utiliza conceitos do HL7 FHIR para organizar o domínio, mas ainda n�
 | Vacinação | `Immunization` | vacina e ocorrência no payload cifrado |
 | Consentimento | `Consent` | tabela `consents`, permissão, validade e revogação |
 | Histórico familiar | `FamilyMemberHistory` | relação e condições no payload cifrado |
+| Prontuário anexado | `DocumentReference` | metadados cifrados e arquivo protegido fora do banco; representação FHIR completa é futura |
 
 ## Estrutura interna de registro
 
@@ -35,3 +36,4 @@ Somente `resourceType` e metadados técnicos mínimos ficam visíveis no banco. 
 3. validar cardinalidades e invariantes;
 4. criar testes contra exemplos oficiais;
 5. avaliar integração com servidor FHIR separado, mantendo o cofre criptográfico.
+6. expor `DocumentReference.content.attachment` sem incorporar os bytes no recurso FHIR.

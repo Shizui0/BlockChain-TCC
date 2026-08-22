@@ -5,6 +5,7 @@
 Dados clínicos nunca são enviados ao ledger. `LedgerService` registra somente:
 
 - SHA-256 de registro protegido;
+- SHA-256 dos bytes originais e da projeção protegida de documentos;
 - algoritmo e timestamp;
 - permissão e expiração de consentimento;
 - revogação;
@@ -16,9 +17,11 @@ Não são registrados nome, CPF, diagnóstico, exame, documento, dado genético 
 
 ```text
 registerRecordHash(recordId, hash, timestamp)
+registerDocumentHashes(documentId, contentHash, protectedHash, timestamp)
 registerConsentGrant(consent)
 registerConsentRevocation(consentId, revokedAt)
 verifyRecordHash(recordId, hash)
+verifyDocumentHashes(documentId, contentHash, protectedHash)
 ```
 
 A implementação local persiste eventos em `ledger_events`. Ela permite demonstrar o fluxo e testar o contrato, mas não oferece imutabilidade distribuída.

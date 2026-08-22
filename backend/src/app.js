@@ -16,6 +16,7 @@ import { createPatientsRouter } from './routes/patients.js';
 import { createProfessionalsRouter } from './routes/professionals.js';
 import { createRecordsRouter } from './routes/records.js';
 import { createConsentsRouter } from './routes/consents.js';
+import { createDocumentsRouter } from './routes/documents.js';
 import { createAuditRouter } from './routes/audit.js';
 import { createFamilyHistoryRouter } from './routes/family-history.js';
 
@@ -69,6 +70,7 @@ export async function createApp(options = {}) {
   app.use('/api/patients', authenticate, requireRole('PATIENT'), createPatientsRouter(database));
   app.use('/api/professionals', authenticate, createProfessionalsRouter(database));
   app.use('/api/records', authenticate, createRecordsRouter(services.records));
+  app.use('/api/documents', authenticate, createDocumentsRouter(services.documents, config));
   app.use('/api/consents', authenticate, requireRole('PATIENT', 'PROFESSIONAL'), createConsentsRouter(services.consents));
   app.use('/api/audit', authenticate, createAuditRouter(services.audit));
   app.use('/api/family-history', authenticate, createFamilyHistoryRouter(services.familyHistory));

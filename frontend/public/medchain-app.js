@@ -1,6 +1,7 @@
 const state = {
   user: null,
   records: [],
+  documents: [],
   consents: [],
   professionals: [],
   audit: [],
@@ -27,12 +28,19 @@ function formatDate(value) {
   return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value));
 }
 
+function formatBytes(value) {
+  if (value < 1024) return `${value} B`;
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KiB`;
+  return `${(value / 1024 / 1024).toFixed(1)} MiB`;
+}
+
 async function api(path, options = {}) {
+  const multipart = options.body instanceof FormData;
   const response = await fetch(path, {
     credentials: 'same-origin',
     ...options,
     headers: {
-      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(options.body && !multipart ? { 'Content-Type': 'application/json' } : {}),
       ...options.headers
     }
   });
@@ -92,6 +100,24 @@ function renderRecords() {
     : '<p class="empty-message">Nenhuma imunização sintética acessível.</p>';
 }
 
+function renderDocuments() {
+  $('#document-count').textContent = state.documents.length;
+  $('#document-list').innerHTML = state.documents.length ? state.documents.map((document) => `
+    <article class="document-card">
+      <span class="document-icon">▧</span>
+      <div>
+        <strong>${escapeHtml(document.fileName)}</strong>
+        <small>${escapeHtml(document.description ?? 'Sem descrição')} • ${formatBytes(document.sizeBytes)} • ${formatDate(document.createdAt)}</small>
+        <span class="document-hash">SHA-256: ${escapeHtml(document.contentHash)}</span>
+      </div>
+      <div class="document-actions">
+        <button class="text-button" type="button" data-document-integrity="${document.id}">Verificar hash</button>
+        <button class="secondary-button compact-button" type="button" data-document-download="${document.id}">Baixar</button>
+      </div>
+    </article>
+  `).join('') : '<p class="empty-message">Nenhum prontuário enviado.</p>';
+}
+
 function filterRecords() {
   const query = ($('#record-search').value ?? '').toLowerCase();
   const resourceType = $('#record-filter').value;
@@ -120,12 +146,12 @@ function renderConsents() {
 }
 
 function renderProfessionalPatients() {
-  const container = $('#patient-access-list');
   if (state.user?.role !== 'PROFESSIONAL') return;
   const unique = new Map(state.consents.filter((consent) => consent.active).map((consent) => [consent.patientId, consent]));
-  container.innerHTML = unique.size ? [...unique.values()].map((consent) => `
+  const markup = unique.size ? [...unique.values()].map((consent) => `
     <button type="button" class="${state.selectedPatientId === consent.patientId ? 'active' : ''}" data-patient="${consent.patientId}">${escapeHtml(consent.patientName)} • ${escapeHtml(consent.permission)}</button>
   `).join('') : '<p class="empty-message">Nenhum paciente concedeu acesso ativo.</p>';
+  $$('[data-patient-access-list]').forEach((container) => { container.innerHTML = markup; });
 }
 
 function renderAudit() {
@@ -140,8 +166,8 @@ function renderFamilyHistory() {
   `).join('') : '<p class="empty-message">Nenhum histórico familiar sintético.</p>';
 }
 
-async function loadRecords(patientId) {
-  state.selectedPatientId = patientId ?? (state.user.role === 'PATIENT' ? state.user.id : null);
+async function loadRecords(patientId = state.selectedPatientId) {
+  state.selectedPatientId = state.user.role === 'PATIENT' ? state.user.id : patientId;
   if (!state.selectedPatientId) {
     state.records = [];
     renderRecords();
@@ -151,6 +177,40 @@ async function loadRecords(patientId) {
   state.records = (await api(`/api/records${suffix}`)).records;
   renderRecords();
   renderProfessionalPatients();
+}
+
+async function loadDocuments(patientId = state.selectedPatientId) {
+  state.selectedPatientId = state.user.role === 'PATIENT' ? state.user.id : patientId;
+  if (!state.selectedPatientId) {
+    state.documents = [];
+    renderDocuments();
+    return;
+  }
+  const suffix = state.user.role === 'PATIENT' ? '' : `?patientId=${encodeURIComponent(state.selectedPatientId)}`;
+  state.documents = (await api(`/api/documents${suffix}`)).documents;
+  renderDocuments();
+  renderProfessionalPatients();
+}
+
+async function selectProfessionalPatient(patientId) {
+  state.selectedPatientId = patientId;
+  const consent = state.consents.find((item) => item.active && item.patientId === patientId);
+  if (consent && ['READ', 'READ_WRITE'].includes(consent.permission)) {
+    await Promise.all([loadRecords(patientId), loadDocuments(patientId)]);
+  } else {
+    state.records = [];
+    state.documents = [];
+    renderRecords();
+    renderDocuments();
+    renderProfessionalPatients();
+  }
+}
+
+function canWriteSelectedPatient() {
+  if (state.user.role === 'PATIENT') return true;
+  return state.consents.some((consent) => consent.active
+    && consent.patientId === state.selectedPatientId
+    && ['WRITE', 'READ_WRITE'].includes(consent.permission));
 }
 
 async function loadAudit() {
@@ -167,18 +227,20 @@ async function loadSessionData() {
   state.consents = consentResult.consents;
   renderConsents();
   if (state.user.role === 'PATIENT') {
-    const [recordsResult, auditResult, familyResult] = await Promise.all([
-      api('/api/records'), api('/api/audit'), api('/api/family-history')
+    const [recordsResult, documentResult, auditResult, familyResult] = await Promise.all([
+      api('/api/records'), api('/api/documents'), api('/api/audit'), api('/api/family-history')
     ]);
     state.records = recordsResult.records;
+    state.documents = documentResult.documents;
     state.audit = auditResult.events;
     state.familyHistory = familyResult.familyHistory;
     renderRecords();
+    renderDocuments();
     renderAudit();
     renderFamilyHistory();
   } else {
-    const firstConsent = state.consents.find((consent) => consent.active && ['READ', 'READ_WRITE'].includes(consent.permission));
-    await loadRecords(firstConsent?.patientId ?? null);
+    const firstConsent = state.consents.find((consent) => consent.active);
+    await selectProfessionalPatient(firstConsent?.patientId ?? null);
   }
 }
 
@@ -189,7 +251,7 @@ async function startSession(user) {
   $('#app-shell').classList.remove('hidden');
   const patient = user.role === 'PATIENT';
   $$('.patient-only').forEach((element) => element.classList.toggle('hidden', !patient));
-  $('#professional-context').classList.toggle('hidden', patient);
+  $$('.professional-context').forEach((element) => element.classList.toggle('hidden', patient));
   $('#profile-name').textContent = user.displayName;
   $('#profile-role').textContent = roleLabel[user.role];
   $('#role-badge').textContent = roleLabel[user.role];
@@ -204,19 +266,48 @@ async function startSession(user) {
 }
 
 function openRecordDialog() {
+  if (!canWriteSelectedPatient()) {
+    toast('Selecione um paciente com consentimento de escrita ativo.', true);
+    return;
+  }
   $('#dialog-content').innerHTML = `<h2 class="dialog-title">Adicionar registro sintético</h2><p class="dialog-description">O conteúdo será cifrado antes de chegar ao banco.</p><div class="field"><label for="record-resource">Recurso FHIR</label><select id="record-resource" name="resourceType"><option>Observation</option><option>Encounter</option><option>Immunization</option></select></div><div class="field"><label for="record-code">Descrição</label><input id="record-code" name="code" required maxlength="160" placeholder="Ex.: Exame demonstrativo"></div><div class="field"><label for="record-value">Resultado ou detalhe sintético</label><textarea id="record-value" name="value" maxlength="500" required></textarea></div><div class="field"><label for="record-note">Observação</label><textarea id="record-note" name="note" maxlength="1000"></textarea></div><div class="dialog-actions"><button type="button" class="secondary-button" data-dialog-cancel>Cancelar</button><button type="submit" class="primary-button">Criptografar e salvar</button></div>`;
   $('#dialog-form').onsubmit = async (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     try {
       await api('/api/records', { method: 'POST', body: JSON.stringify({
+        ...(state.user.role === 'PROFESSIONAL' ? { patientId: state.selectedPatientId } : {}),
         resourceType: data.get('resourceType'),
         clinicalData: { code: data.get('code'), value: data.get('value'), note: data.get('note') || undefined, status: 'final' }
       }) });
       $('#app-dialog').close();
-      await loadRecords();
-      await loadAudit();
+      await loadRecords(state.selectedPatientId);
+      if (state.user.role === 'PATIENT') await loadAudit();
       toast('Registro sintético cifrado e registrado com integridade.');
+    } catch (error) { toast(error.message, true); }
+  };
+  $('#app-dialog').showModal();
+}
+
+function openDocumentDialog() {
+  if (!canWriteSelectedPatient()) {
+    toast('Selecione um paciente com consentimento de escrita ativo.', true);
+    return;
+  }
+  $('#dialog-content').innerHTML = `<h2 class="dialog-title">Enviar prontuário</h2><p class="dialog-description">O arquivo será cifrado antes de ser gravado. Limite: 10 MiB.</p><div class="field"><label for="document-file">Arquivo PDF, PNG ou JPEG</label><input id="document-file" name="document" type="file" accept="application/pdf,image/png,image/jpeg" required></div><div class="field"><label for="document-description">Descrição sintética opcional</label><input id="document-description" name="description" maxlength="300" placeholder="Ex.: Laudo demonstrativo"></div><div class="dialog-actions"><button type="button" class="secondary-button" data-dialog-cancel>Cancelar</button><button type="submit" class="primary-button">Cifrar e enviar</button></div>`;
+  $('#dialog-form').onsubmit = async (event) => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    if (state.user.role === 'PROFESSIONAL') data.set('patientId', state.selectedPatientId);
+    try {
+      await api('/api/documents', { method: 'POST', body: data });
+      $('#app-dialog').close();
+      const canRead = state.user.role === 'PATIENT' || state.consents.some((consent) => consent.active
+        && consent.patientId === state.selectedPatientId
+        && ['READ', 'READ_WRITE'].includes(consent.permission));
+      if (canRead) await loadDocuments(state.selectedPatientId);
+      if (state.user.role === 'PATIENT') await loadAudit();
+      toast('Prontuário cifrado e SHA-256 registrado com sucesso.');
     } catch (error) { toast(error.message, true); }
   };
   $('#app-dialog').showModal();
@@ -247,6 +338,24 @@ function openSecurityDialog() {
   $('#app-dialog').showModal();
 }
 
+async function downloadDocument(documentId) {
+  const documentInfo = state.documents.find((item) => item.id === documentId);
+  const response = await fetch(`/api/documents/${documentId}/content`, { credentials: 'same-origin' });
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(body?.error?.message ?? 'Não foi possível baixar o prontuário.');
+  }
+  const url = URL.createObjectURL(await response.blob());
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = documentInfo?.fileName ?? 'prontuario';
+  anchor.hidden = true;
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 $('#login-form').addEventListener('submit', async (event) => {
   event.preventDefault();
   const data = new FormData(event.currentTarget);
@@ -273,6 +382,7 @@ document.addEventListener('click', async (event) => {
   }
   const action = event.target.closest('[data-action]')?.dataset.action;
   if (action === 'new-record') openRecordDialog();
+  if (action === 'upload-document') openDocumentDialog();
   if (action === 'share') openConsentDialog();
   if (action === 'security') openSecurityDialog();
   if (event.target.closest('[data-dialog-cancel], .dialog-close')) $('#app-dialog').close();
@@ -284,6 +394,20 @@ document.addEventListener('click', async (event) => {
       toast(result.valid ? `Integridade confirmada com ${result.algorithm}.` : 'Divergência de integridade detectada.', !result.valid);
       if (state.user.role === 'PATIENT') await loadAudit();
     } catch (error) { toast(error.message, true); }
+  }
+
+  const documentIntegrityId = event.target.closest('[data-document-integrity]')?.dataset.documentIntegrity;
+  if (documentIntegrityId) {
+    try {
+      const result = await api(`/api/documents/${documentIntegrityId}/integrity`);
+      toast(result.valid ? `Prontuário íntegro: ${result.algorithm}.` : 'Divergência no prontuário detectada.', !result.valid);
+      if (state.user.role === 'PATIENT') await loadAudit();
+    } catch (error) { toast(error.message, true); }
+  }
+
+  const documentDownloadId = event.target.closest('[data-document-download]')?.dataset.documentDownload;
+  if (documentDownloadId) {
+    try { await downloadDocument(documentDownloadId); } catch (error) { toast(error.message, true); }
   }
 
   const consentId = event.target.closest('[data-revoke]')?.dataset.revoke;
@@ -299,7 +423,7 @@ document.addEventListener('click', async (event) => {
 
   const patientId = event.target.closest('[data-patient]')?.dataset.patient;
   if (patientId) {
-    try { await loadRecords(patientId); } catch (error) { toast(error.message, true); }
+    try { await selectProfessionalPatient(patientId); } catch (error) { toast(error.message, true); }
   }
 });
 

@@ -34,6 +34,8 @@
 | CSRF | Ação em nome do usuário | SameSite Strict e mesma origem | token anti-CSRF se houver integrações cross-site |
 | Injeção SQL | Leitura ou alteração do banco | consultas preparadas e validação | revisão SAST e privilégio mínimo no PostgreSQL |
 | Negação de serviço | Indisponibilidade | limite de corpo e rate limit de autenticação | rate limit global, WAF e observabilidade |
+| Upload malicioso | execução, exaustão ou conteúdo disfarçado | limite de 10 MiB, MIME + assinatura, nome aleatório e arquivo nunca executado | antivírus/CDR, object storage isolado e varredura assíncrona |
+| Vazamento de arquivo temporário | exposição de prontuário plaintext | upload em memória e persistência somente após AES-256-GCM | streaming cifrado e isolamento por tenant |
 
 ## Riscos aceitos no MVP
 

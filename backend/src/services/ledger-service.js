@@ -33,6 +33,15 @@ export class LedgerService {
     });
   }
 
+  registerDocumentHashes(documentId, contentHash, protectedHash, timestamp) {
+    return this.append('DOCUMENT_HASH_REGISTERED', 'document', documentId, {
+      contentHash,
+      protectedHash,
+      algorithm: 'SHA-256',
+      timestamp
+    });
+  }
+
   registerConsentGrant(consent) {
     return this.append('CONSENT_GRANTED', 'consent', consent.id, {
       permission: consent.permission,
@@ -55,5 +64,19 @@ export class LedgerService {
     `).get(subjectRef);
     if (!row) return false;
     return JSON.parse(row.payloadJson).hash === hash;
+  }
+
+  verifyDocumentHashes(documentId, contentHash, protectedHash) {
+    const subjectRef = pseudonymize('document', documentId);
+    const row = this.database.prepare(`
+      SELECT payload_json AS payloadJson
+      FROM ledger_events
+      WHERE subject_ref = ? AND event_type = 'DOCUMENT_HASH_REGISTERED'
+      ORDER BY created_at DESC
+      LIMIT 1
+    `).get(subjectRef);
+    if (!row) return false;
+    const payload = JSON.parse(row.payloadJson);
+    return payload.contentHash === contentHash && payload.protectedHash === protectedHash;
   }
 }

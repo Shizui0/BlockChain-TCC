@@ -34,6 +34,8 @@ Browser
 | `professionals` | Registro profissional/organizacional sintético |
 | `medical_records` | Payload clínico cifrado e metadados mínimos |
 | `record_integrity` | SHA-256 do registro protegido |
+| `medical_documents` | Referência do arquivo cifrado e metadados cifrados |
+| `document_integrity` | SHA-256 dos bytes originais e da projeção protegida |
 | `consents` | Permissão, expiração e revogação |
 | `audit_events` | Quem realizou qual ação e quando |
 | `ledger_events` | Mock persistente de hashes e consentimentos pseudonimizados |
@@ -53,6 +55,20 @@ JSON clínico validado
 ```
 
 AES-256-GCM fornece confidencialidade e autenticação do ciphertext. SHA-256 fornece uma impressão determinística para comparar integridade e registrar uma prova fora do armazenamento clínico.
+
+## Upload de prontuário
+
+```text
+multipart PDF/PNG/JPEG validado e limitado
+  → SHA-256 dos bytes originais
+  → AES-256-GCM do arquivo em memória
+  → ciphertext em backend/data/uploads/<UUID>.enc
+  → metadados cifrados em medical_documents
+  → SHA-256 da projeção protegida
+  → document_integrity + LedgerService
+```
+
+O nome original e a descrição ficam dentro do payload de metadados cifrado. O download só ocorre após autorização e confirmação das provas de integridade.
 
 ## Autorização
 

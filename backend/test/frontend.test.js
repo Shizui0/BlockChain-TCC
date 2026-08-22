@@ -17,6 +17,9 @@ describe('frontend integrado', () => {
     const client = await context.request.get('/medchain-app.js');
     assert.equal(client.status, 200);
     assert.match(client.text, /\/api\/records/);
+    assert.match(client.text, /\/api\/documents/);
+    assert.match(client.text, /new FormData/);
     assert.equal(client.text.includes('localStorage'), false);
+    assert.match(page.text, /Prontuários/);
   });
 });

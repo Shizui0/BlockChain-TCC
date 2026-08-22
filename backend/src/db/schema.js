@@ -45,6 +45,37 @@ CREATE TABLE IF NOT EXISTS record_integrity (
 
 CREATE INDEX IF NOT EXISTS idx_integrity_record ON record_integrity(record_id, created_at DESC);
 
+CREATE TABLE IF NOT EXISTS medical_documents (
+  id TEXT PRIMARY KEY,
+  patient_id TEXT NOT NULL REFERENCES patients(user_id),
+  created_by TEXT NOT NULL REFERENCES users(id),
+  storage_name TEXT NOT NULL UNIQUE,
+  file_iv TEXT NOT NULL,
+  file_auth_tag TEXT NOT NULL,
+  metadata_ciphertext TEXT NOT NULL,
+  metadata_iv TEXT NOT NULL,
+  metadata_auth_tag TEXT NOT NULL,
+  key_version TEXT NOT NULL,
+  size_bytes INTEGER NOT NULL CHECK (size_bytes > 0),
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_documents_patient
+  ON medical_documents(patient_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS document_integrity (
+  id TEXT PRIMARY KEY,
+  document_id TEXT NOT NULL REFERENCES medical_documents(id) ON DELETE CASCADE,
+  content_hash TEXT NOT NULL,
+  protected_hash TEXT NOT NULL,
+  algorithm TEXT NOT NULL CHECK (algorithm = 'SHA-256'),
+  actor_id TEXT NOT NULL REFERENCES users(id),
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_document_integrity
+  ON document_integrity(document_id, created_at DESC);
+
 CREATE TABLE IF NOT EXISTS consents (
   id TEXT PRIMARY KEY,
   patient_id TEXT NOT NULL REFERENCES patients(user_id),

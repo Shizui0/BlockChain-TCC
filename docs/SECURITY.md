@@ -26,9 +26,13 @@ Em produção, substituir o cadastro/login local por OpenID Connect com MFA, pol
 
 `MEDCHAIN_MASTER_KEY` deve conter exatamente 32 bytes, em base64 ou hexadecimal, e nunca deve ser commitida. A chave fica na memória do processo durante a execução.
 
+Prontuários aceitam somente PDF, PNG e JPEG, com validação de MIME e assinatura binária. O upload usa memória limitada, cifra os bytes com AES-256-GCM e grava somente ciphertext sob um nome UUID em `backend/data/uploads`. Nome original e descrição são cifrados no banco. O limite padrão é 10 MiB.
+
 ## Integridade
 
 O SHA-256 cobre identificadores, metadados mínimos e todos os campos do conteúdo protegido. O hash é comparado em tempo constante e confrontado com o último evento correspondente do ledger local.
+
+Para documentos há duas provas: `content_hash` representa exatamente os bytes enviados antes da cifragem; `protected_hash` cobre a projeção técnica, os metadados cifrados e o hash do arquivo cifrado. Download e verificação falham quando qualquer prova diverge.
 
 Criptografia não substitui hash de auditoria: a primeira restringe leitura e autentica o ciphertext; o segundo permite registrar uma prova determinística separada.
 

@@ -33,6 +33,19 @@ export class CryptoService {
     };
   }
 
+  encryptBuffer(value, context) {
+    const iv = randomBytes(12);
+    const cipher = createCipheriv('aes-256-gcm', this.key, iv);
+    cipher.setAAD(Buffer.from(canonicalJson(context)));
+    const ciphertext = Buffer.concat([cipher.update(value), cipher.final()]);
+    return {
+      ciphertext,
+      iv: iv.toString('base64'),
+      authTag: cipher.getAuthTag().toString('base64'),
+      keyVersion: this.keyVersion
+    };
+  }
+
   decrypt(protectedValue, context) {
     const decipher = createDecipheriv(
       'aes-256-gcm',
@@ -46,5 +59,19 @@ export class CryptoService {
       decipher.final()
     ]);
     return JSON.parse(plaintext.toString('utf8'));
+  }
+
+  decryptBuffer(protectedValue, context) {
+    const decipher = createDecipheriv(
+      'aes-256-gcm',
+      this.key,
+      Buffer.from(protectedValue.iv, 'base64')
+    );
+    decipher.setAAD(Buffer.from(canonicalJson(context)));
+    decipher.setAuthTag(Buffer.from(protectedValue.authTag, 'base64'));
+    return Buffer.concat([
+      decipher.update(protectedValue.ciphertext),
+      decipher.final()
+    ]);
   }
 }

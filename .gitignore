@@ -14,9 +14,14 @@ build/
 .idea/
 coverage/
 backend/data/
+backend/data/uploads/
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal
 /.sass-cache
 *.log
 *.tgz
+*.tmp
+*.temp
+tmp/
+temp/

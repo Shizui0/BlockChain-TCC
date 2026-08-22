@@ -35,6 +35,7 @@
         <nav>
           <a class="nav-link active" href="#inicio" data-view="inicio"><span>⌂</span> Visão geral</a>
           <a class="nav-link" href="#historico" data-view="historico"><span>▤</span> Meu histórico</a>
+          <a class="nav-link" href="#documentos" data-view="documentos"><span>▧</span> Prontuários</a>
           <a class="nav-link" href="#vacinas" data-view="vacinas"><span>✚</span> Vacinas</a>
           <a class="nav-link" href="#acessos" data-view="acessos"><span>⌘</span> Consentimentos</a>
           <a class="nav-link patient-only" href="#auditoria" data-view="auditoria"><span>◎</span> Auditoria</a>
@@ -56,6 +57,7 @@
           <div class="security-banner"><div class="lock-icon">⌾</div><div><strong>Arquitetura projetada considerando princípios da LGPD</strong><p>Este protótipo acadêmico não representa conformidade jurídica ou operacional.</p></div><span>DEMONSTRAÇÃO</span></div>
           <div class="stats-grid">
             <article class="stat-card"><div class="stat-icon blue">▤</div><div><small>Registros acessíveis</small><strong id="record-count">0</strong><p>Conteúdo cifrado no banco</p></div></article>
+            <article class="stat-card"><div class="stat-icon blue">▧</div><div><small>Prontuários</small><strong id="document-count">0</strong><p>Arquivos cifrados fora do banco</p></div></article>
             <article class="stat-card"><div class="stat-icon green">✓</div><div><small>Integridade</small><strong>SHA-256</strong><p>Hashes no ledger local</p></div></article>
             <article class="stat-card"><div class="stat-icon purple">⌘</div><div><small>Consentimentos ativos</small><strong id="consent-count">0</strong><p>Temporários e revogáveis</p></div></article>
           </div>
@@ -63,9 +65,16 @@
         </section>
 
         <section class="view" id="historico">
-          <div class="page-title"><div><p class="eyebrow">FHIR INICIAL</p><h1>Histórico médico</h1><p>Encounter, Observation e Immunization com conteúdo clínico cifrado.</p></div><button class="primary-button patient-only" type="button" data-action="new-record">＋ Novo registro</button></div>
-          <div class="panel professional-context hidden" id="professional-context"><h2>Acesso profissional</h2><p>Selecione um paciente com consentimento ativo.</p><div id="patient-access-list" class="chip-list"></div></div>
+          <div class="page-title"><div><p class="eyebrow">FHIR INICIAL</p><h1>Histórico médico</h1><p>Encounter, Observation e Immunization com conteúdo clínico cifrado.</p></div><button class="primary-button" type="button" data-action="new-record">＋ Novo registro</button></div>
+          <div class="panel professional-context hidden"><h2>Acesso profissional</h2><p>Selecione um paciente com consentimento ativo.</p><div class="chip-list" data-patient-access-list></div></div>
           <div class="panel"><div class="filters"><input id="record-search" type="search" placeholder="Buscar nos registros descriptografados..." /><select id="record-filter"><option value="all">Todos os recursos</option><option>Encounter</option><option>Observation</option><option>Immunization</option></select></div><div class="records-table" id="records-table"></div></div>
+        </section>
+
+        <section class="view" id="documentos">
+          <div class="page-title"><div><p class="eyebrow">DOCUMENTOS CIFRADOS</p><h1>Prontuários enviados</h1><p>PDF, PNG ou JPEG cifrado com AES-256-GCM e verificado por SHA-256.</p></div><button class="primary-button" type="button" data-action="upload-document">＋ Enviar prontuário</button></div>
+          <div class="panel professional-context hidden"><h2>Acesso profissional</h2><p>Selecione um paciente com consentimento ativo.</p><div class="chip-list" data-patient-access-list></div></div>
+          <div class="security-banner"><div class="lock-icon">⌾</div><div><strong>O arquivo original não é persistido em plaintext</strong><p>Somente o conteúdo cifrado é gravado em backend/data/uploads; o SHA-256 permite conferir os bytes originais após a descriptografia.</p></div><span>ATÉ 10 MiB</span></div>
+          <div class="panel document-list" id="document-list"></div>
         </section>
 
         <section class="view" id="vacinas"><div class="page-title"><div><p class="eyebrow">FHIR IMMUNIZATION</p><h1>Carteira de vacinação</h1><p>Somente dados sintéticos de imunização.</p></div></div><div class="panel" id="vaccines-list"></div></section>

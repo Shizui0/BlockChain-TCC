@@ -4,7 +4,7 @@ import { DEMO_PASSWORD, DEMO_USERS } from '../src/db/seed.js';
 
 export const TEST_MASTER_KEY = Buffer.alloc(32, 7).toString('base64');
 
-export async function createTestContext() {
+export async function createTestContext(configOverrides = {}) {
   const context = await createApp({
     config: {
       environment: 'test',
@@ -14,7 +14,8 @@ export async function createTestContext() {
       keyVersion: 'test-v1',
       frontendOrigin: 'http://localhost:4173',
       secureCookies: false,
-      seedDemo: true
+      seedDemo: true,
+      ...configOverrides
     },
     seed: true
   });
