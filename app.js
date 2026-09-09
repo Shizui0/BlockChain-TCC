@@ -18,7 +18,7 @@ const typeIcon = { Consulta: '♙', Exame: '◇', Procedimento: '✦' };
 function renderRecords() {
   const timeline = $('#timeline');
   timeline.innerHTML = state.records.slice(0, 4).map(recordTemplate).join('');
-  $('#record-count').textContent = state.records.length + 8;
+  $('#record-count').textContent = state.records.length;
   filterRecords();
 }
 function recordTemplate(r, table = false) {
@@ -43,9 +43,9 @@ function navigate(id) {
 }
 function openDialog(kind) {
   const content = $('#dialog-content');
-  if (kind === 'new-record') content.innerHTML = `<h2 class="dialog-title">Adicionar registro</h2><p class="dialog-description">Inclua uma nova informação no seu prontuário.</p><div class="field"><label>Tipo de registro</label><select name="type"><option>Consulta</option><option>Exame</option><option>Procedimento</option></select></div><div class="field"><label>Título</label><input name="title" required placeholder="Ex.: Consulta cardiológica"></div><div class="field"><label>Instituição e detalhes</label><textarea name="detail" required placeholder="Informe o local e uma breve descrição"></textarea></div><div class="dialog-actions"><button value="cancel" class="secondary-button">Cancelar</button><button type="submit" value="default" class="primary-button">Salvar com segurança</button></div>`;
-  else if (kind === 'share') content.innerHTML = `<h2 class="dialog-title">Compartilhar acesso</h2><p class="dialog-description">Gere uma autorização temporária para um profissional ou instituição.</p><div class="field"><label>Nome do profissional ou instituição</label><input name="recipient" required placeholder="Ex.: Hospital São Lucas"></div><div class="field"><label>Validade</label><select name="duration"><option>24 horas</option><option>7 dias</option><option>30 dias</option></select></div><div class="field"><label>Permissão</label><select name="permission"><option>Somente leitura</option><option>Leitura e inclusão de registros</option></select></div><div class="dialog-actions"><button value="cancel" class="secondary-button">Cancelar</button><button type="submit" class="primary-button">Gerar acesso</button></div>`;
-  else content.innerHTML = `<h2 class="dialog-title">Segurança por design</h2><p class="dialog-description">Este protótipo usa armazenamento local para demonstração. A arquitetura de produção prevê criptografia ponta a ponta, trilha de auditoria imutável e consentimento granular em conformidade com a LGPD.</p><div class="security-banner"><div class="lock-icon">✓</div><div><strong>Integridade verificada</strong><p>Nenhuma alteração suspeita encontrada.</p></div></div><div class="dialog-actions"><button value="cancel" class="primary-button">Entendi</button></div>`;
+  if (kind === 'new-record') content.innerHTML = `<h2 class="dialog-title">Adicionar registro</h2><p class="dialog-description">Inclua uma nova informação no seu prontuário.</p><div class="field"><label>Tipo de registro</label><select name="type"><option>Consulta</option><option>Exame</option><option>Procedimento</option></select></div><div class="field"><label>Título</label><input name="title" required placeholder="Ex.: Consulta cardiológica"></div><div class="field"><label>Instituição e detalhes</label><textarea name="detail" required placeholder="Informe o local e uma breve descrição"></textarea></div><div class="dialog-actions"><button type="button" data-close-dialog class="secondary-button">Cancelar</button><button type="submit" value="default" class="primary-button">Salvar com segurança</button></div>`;
+  else if (kind === 'share') content.innerHTML = `<h2 class="dialog-title">Compartilhar acesso</h2><p class="dialog-description">Gere uma autorização temporária para um profissional ou instituição.</p><div class="field"><label>Nome do profissional ou instituição</label><input name="recipient" required placeholder="Ex.: Hospital São Lucas"></div><div class="field"><label>Validade</label><select name="duration"><option>24 horas</option><option>7 dias</option><option>30 dias</option></select></div><div class="field"><label>Permissão</label><select name="permission"><option>Somente leitura</option><option>Leitura e inclusão de registros</option></select></div><div class="dialog-actions"><button type="button" data-close-dialog class="secondary-button">Cancelar</button><button type="submit" class="primary-button">Gerar acesso</button></div>`;
+  else content.innerHTML = `<h2 class="dialog-title">Segurança por design</h2><p class="dialog-description">Este protótipo usa armazenamento local para demonstração. A arquitetura de produção prevê criptografia ponta a ponta, trilha de auditoria imutável e consentimento granular em conformidade com a LGPD.</p><div class="security-banner"><div class="lock-icon">✓</div><div><strong>Integridade verificada</strong><p>Nenhuma alteração suspeita encontrada.</p></div></div><div class="dialog-actions"><button type="button" data-close-dialog class="primary-button">Entendi</button></div>`;
   $('#dialog-form').dataset.kind = kind;
   $('#app-dialog').showModal();
 }
@@ -62,6 +62,9 @@ $$('[data-action]').forEach(button => button.addEventListener('click', () => {
 $('.menu-toggle').addEventListener('click', () => $('.sidebar').classList.toggle('open'));
 $('#record-search').addEventListener('input', filterRecords);
 $('#record-filter').addEventListener('change', filterRecords);
+$('#dialog-form').addEventListener('click', e => {
+  if (e.target.closest('[data-close-dialog]')) $('#app-dialog').close();
+});
 $('#dialog-form').addEventListener('submit', e => {
   e.preventDefault();
   const data = new FormData(e.currentTarget);
@@ -69,7 +72,7 @@ $('#dialog-form').addEventListener('submit', e => {
     state.records.unshift({ id: Date.now(), type: data.get('type'), title: data.get('title'), detail: data.get('detail'), date: 'Agora' });
     localStorage.setItem('medchain-records', JSON.stringify(state.records));
     renderRecords(); toast('Registro salvo no seu cofre digital.');
-  } else toast(`Acesso para ${data.get('recipient')} gerado com sucesso.`);
+  } else if (e.currentTarget.dataset.kind === 'share') toast(`Acesso para ${data.get('recipient')} gerado com sucesso.`);
   $('#app-dialog').close();
 });
 renderRecords(); renderAccess();
