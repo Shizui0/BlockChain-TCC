@@ -5,6 +5,6 @@
   "description": "Protótipo de prontuário médico seguro e controlado pelo paciente",
   "scripts": {
     "start": "python3 -m http.server 4173",
-    "check": "node --check app.js"
+    "check": "node --check app.js && node --check vaccines.js"
   }
 }

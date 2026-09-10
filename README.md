@@ -29,3 +29,9 @@ Para evolução, recomenda-se separar a solução em: aplicação web do pacient
 Criação com destinatário, permissão e validade de 24 horas, 7 dias ou 30 dias. As autorizações persistem neste navegador; expiradas e revogadas permanecem no histórico. O painel conta apenas as ativas. A expiração usa o relógio do dispositivo.
 
 Não envia convites nem libera acesso remoto: a aplicação real deverá autenticar destinatários e validar permissões, expiração e revogação no servidor.
+
+## Carteira de vacinação
+
+Cadastre vacina, dose, data de aplicação (até hoje) e instituição. Comprovantes opcionais em PDF, JPG ou PNG de até 1 MB são salvos com os registros no navegador e podem ser baixados pela carteira. O armazenamento total depende da cota do navegador; falhas de gravação são informadas sem anunciar sucesso.
+
+Os indicadores mostram doses cadastradas, vacinas distintas e proporção de doses com anexo. Não indicam cobertura vacinal nem verificam autenticidade dos comprovantes. A lista começa vazia e mantém os dados após recarregar no mesmo navegador e endereço. O sistema impede duplicação da mesma vacina, dose e data.

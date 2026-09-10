@@ -60,7 +60,7 @@
 
           <div class="stats-grid">
             <article class="stat-card"><div class="stat-icon blue">▤</div><div><small>Registros médicos</small><strong id="record-count">0</strong><p><b>+2</b> nos últimos 30 dias</p></div></article>
-            <article class="stat-card"><div class="stat-icon green">✚</div><div><small>Vacinas em dia</small><strong>8 de 9</strong><p>Próxima em 24 de set.</p></div></article>
+            <article class="stat-card"><div class="stat-icon green">✚</div><div><small>Doses registradas</small><strong id="vaccine-count">0</strong><p id="vaccine-stat-summary">0 vacinas distintas</p></div></article>
             <article class="stat-card"><div class="stat-icon purple">⌘</div><div><small>Acessos autorizados</small><strong id="access-count">0</strong><p id="access-summary">0 autorizações ativas</p></div></article>
           </div>
 
@@ -71,8 +71,8 @@
             </section>
             <aside class="panel vaccine-panel">
               <div class="panel-head"><div><h2>Carteira de vacinação</h2><p>Acompanhe suas doses</p></div><span class="vaccine-icon">✚</span></div>
-              <div class="progress-ring" aria-label="89% das vacinas em dia"><svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="51"/><circle class="progress" cx="60" cy="60" r="51"/></svg><div><strong>89%</strong><small>em dia</small></div></div>
-              <div class="next-vaccine"><span>PRÓXIMA DOSE</span><strong>Influenza (Gripe)</strong><p>24 de setembro de 2026</p><small>Posto de Saúde Central</small></div>
+              <div class="progress-ring" id="vaccine-ring" aria-label="Nenhuma dose registrada"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="track" cx="60" cy="60" r="51"/><circle class="progress" id="vaccine-progress" cx="60" cy="60" r="51" style="stroke-dashoffset:320"/></svg><div><strong id="vaccine-proof-percent">0%</strong><small>com anexo</small></div></div>
+              <div class="next-vaccine"><span>COMPROVANTES</span><strong id="vaccine-proof-summary">0 de 0 doses com comprovante anexado</strong><p>ÚLTIMA DOSE REGISTRADA</p><small id="vaccine-latest">Nenhuma dose registrada</small></div>
               <button class="wide-button" data-view-link="vacinas">Ver carteira completa</button>
             </aside>
           </div>
@@ -84,13 +84,24 @@
         </section>
 
         <section class="view" id="historico"><div class="page-title"><div><p class="eyebrow">PRONTUÁRIO INTEGRADO</p><h1>Meu histórico</h1><p>Consultas, exames, diagnósticos e procedimentos.</p></div><button class="primary-button" data-action="new-record">＋ Novo registro</button></div><div class="panel"><div class="filters"><input id="record-search" type="search" placeholder="Buscar no histórico..."/><select id="record-filter"><option value="all">Todos os tipos</option><option>Consulta</option><option>Exame</option><option>Procedimento</option></select></div><div class="records-table" id="records-table"></div></div></section>
-        <section class="view" id="vacinas"><div class="page-title"><div><p class="eyebrow">IMUNIZAÇÃO</p><h1>Carteira de vacinação</h1><p>Registro nacional consolidado das suas vacinas.</p></div></div><div class="panel empty-feature"><span>✚</span><h2>8 de 9 vacinas em dia</h2><p>Sua próxima dose de Influenza está prevista para 24 de setembro.</p><button class="primary-button" data-action="new-vaccine">Registrar vacina</button></div></section>
+        <section class="view" id="vacinas"><div class="page-title"><div><p class="eyebrow">IMUNIZAÇÃO</p><h1>Carteira de vacinação</h1><p>Doses e comprovantes cadastrados neste navegador.</p></div><button class="primary-button" data-action="new-vaccine">＋ Registrar vacina</button></div><div class="panel"><p id="vaccine-summary" role="status">Nenhuma dose registrada</p><p class="vaccine-note">Os indicadores resumem seus cadastros; não avaliam se a vacinação está em dia nem validam os comprovantes.</p><div id="vaccine-list"></div></div></section>
         <section class="view" id="acessos"><div class="page-title"><div><p class="eyebrow">PRIVACIDADE</p><h1>Controle de acessos</h1><p>Gerencie destinatários, permissões e validade. Demonstração local: não concede acesso em outro dispositivo.</p></div><button class="primary-button" data-action="share">＋ Novo acesso</button></div><div class="panel"><div class="access-list detailed" id="access-list"></div></div></section>
       </main>
     </div>
 
     <dialog id="app-dialog"><form method="dialog" id="dialog-form"><button type="button" class="dialog-close" data-close-dialog aria-label="Fechar">×</button><div id="dialog-content"></div></form></dialog>
     <div class="toast" role="status" aria-live="polite" id="toast"></div>
+    <dialog id="vaccine-dialog" aria-labelledby="vaccine-dialog-title"><form id="vaccine-form">
+      <button type="button" class="dialog-close" data-close-vaccine aria-label="Fechar cadastro de vacina">×</button>
+      <h2 class="dialog-title" id="vaccine-dialog-title">Registrar vacina</h2><p class="dialog-description">Cadastre uma dose já aplicada. Dados e anexos ficam salvos neste navegador.</p>
+      <div class="field"><label for="vaccine-name">Vacina</label><input id="vaccine-name" name="name" required maxlength="120" placeholder="Ex.: Hepatite B"></div>
+      <div class="field"><label for="vaccine-dose">Dose</label><input id="vaccine-dose" name="dose" required maxlength="120" placeholder="Ex.: 1ª dose, reforço ou dose única"></div>
+      <div class="field"><label for="vaccine-date">Data da aplicação</label><input id="vaccine-date" name="date" type="date" required min="1900-01-01"></div>
+      <div class="field"><label for="vaccine-institution">Instituição</label><input id="vaccine-institution" name="institution" required maxlength="120" placeholder="Ex.: UBS Central"></div>
+      <div class="field"><label for="vaccine-proof">Comprovante (opcional)</label><input id="vaccine-proof" name="proof" type="file" accept="application/pdf,image/jpeg,image/png" aria-describedby="vaccine-proof-help"><small id="vaccine-proof-help">PDF, JPG ou PNG, até 1 MB. Você poderá baixar o anexo na carteira.</small></div>
+      <p id="vaccine-error" role="alert"></p><div class="dialog-actions"><button type="button" class="secondary-button" data-close-vaccine>Cancelar</button><button type="submit" class="primary-button" id="vaccine-save">Salvar vacina</button></div>
+    </form></dialog>
     <script src="app.js"></script>
+    <script src="vaccines.js"></script>
   </body>
 </html>

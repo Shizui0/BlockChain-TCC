@@ -100,7 +100,7 @@ $$('.nav-link').forEach(link => link.addEventListener('click', e => { e.preventD
 $$('[data-view-link]').forEach(button => button.addEventListener('click', () => navigate(button.dataset.viewLink)));
 $$('[data-action]').forEach(button => button.addEventListener('click', () => {
   if (button.dataset.action === 'all-records') navigate('historico');
-  else if (button.dataset.action === 'new-vaccine') toast('Registro de vacina preparado para a próxima versão.');
+  else if (button.dataset.action === 'new-vaccine') return;
   else openDialog(button.dataset.action);
 }));
 $('.menu-toggle').addEventListener('click', () => $('.sidebar').classList.toggle('open'));
