@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="MedChain — MVP acadêmico com dados de saúde sintéticos." />
+    <title>MedChain | MVP acadêmico</title>
+    <link rel="stylesheet" href="medchain.css" />
+  </head>
+  <body>
+    <section class="auth-screen" id="auth-screen">
+      <div class="auth-card">
+        <a class="brand auth-brand" href="#" aria-label="MedChain"><span class="brand-mark">✦</span><span>Med<span>Chain</span></span></a>
+        <p class="eyebrow">MVP ACADÊMICO</p>
+        <h1>Entrar no ambiente de demonstração</h1>
+        <p>Use somente as identidades e os dados sintéticos fornecidos pelo projeto.</p>
+        <form id="login-form">
+          <div class="field"><label for="login-email">E-mail</label><input id="login-email" name="email" type="email" autocomplete="username" required /></div>
+          <div class="field"><label for="login-password">Senha</label><input id="login-password" name="password" type="password" autocomplete="current-password" required /></div>
+          <button class="primary-button wide-button" type="submit">Entrar</button>
+        </form>
+        <div class="demo-accounts">
+          <strong>Contas sintéticas</strong>
+          <button type="button" data-demo-email="paciente@demo.medchain.local">Paciente Teste</button>
+          <button type="button" data-demo-email="medico@demo.medchain.local">Médico Teste</button>
+          <small>Senha: <code>MedChainDemo123!</code></small>
+        </div>
+        <p class="form-error" id="login-error" role="alert"></p>
+      </div>
+    </section>
+
+    <div class="app-shell hidden" id="app-shell">
+      <aside class="sidebar" aria-label="Navegação principal">
+        <a class="brand" href="#inicio" data-view-link="inicio" aria-label="Página inicial MedChain"><span class="brand-mark">✦</span><span>Med<span>Chain</span></span></a>
+        <nav>
+          <a class="nav-link active" href="#inicio" data-view="inicio"><span>⌂</span> Visão geral</a>
+          <a class="nav-link" href="#historico" data-view="historico"><span>▤</span> Meu histórico</a>
+          <a class="nav-link" href="#documentos" data-view="documentos"><span>▧</span> Prontuários</a>
+          <a class="nav-link" href="#vacinas" data-view="vacinas"><span>✚</span> Vacinas</a>
+          <a class="nav-link" href="#acessos" data-view="acessos"><span>⌘</span> Consentimentos</a>
+          <a class="nav-link patient-only" href="#auditoria" data-view="auditoria"><span>◎</span> Auditoria</a>
+          <a class="nav-link patient-only" href="#familia" data-view="familia"><span>♧</span> Histórico familiar</a>
+        </nav>
+        <div class="sidebar-card"><span class="shield">✓</span><strong>Proteção ativa no MVP</strong><p>AES-256-GCM para confidencialidade e SHA-256 para integridade.</p><button class="text-button" type="button" data-action="security">Ver detalhes →</button></div>
+        <div class="profile-mini"><div class="avatar" id="profile-initials">--</div><div><strong id="profile-name">Carregando</strong><small id="profile-role">—</small></div></div>
+      </aside>
+
+      <main>
+        <header class="topbar">
+          <button class="menu-toggle" aria-label="Abrir menu">☰</button>
+          <div class="status-pill"><i></i> MVP local • dados sintéticos</div>
+          <div class="top-actions"><span class="role-badge" id="role-badge">—</span><button class="secondary-button" id="logout-button" type="button">Sair</button></div>
+        </header>
+
+        <section class="view active" id="inicio">
+          <div class="welcome-row"><div><p class="eyebrow">MEDCHAIN CORE MVP</p><h1>Olá, <span id="welcome-name">usuário</span>!</h1><p>Registros sintéticos protegidos e consentimentos auditáveis.</p></div><button class="secondary-button patient-only" type="button" data-action="new-record">＋ Adicionar registro</button></div>
+          <div class="security-banner"><div class="lock-icon">⌾</div><div><strong>Arquitetura projetada considerando princípios da LGPD</strong><p>Este protótipo acadêmico não representa conformidade jurídica ou operacional.</p></div><span>DEMONSTRAÇÃO</span></div>
+          <div class="stats-grid">
+            <article class="stat-card"><div class="stat-icon blue">▤</div><div><small>Registros acessíveis</small><strong id="record-count">0</strong><p>Conteúdo cifrado no banco</p></div></article>
+            <article class="stat-card"><div class="stat-icon blue">✚</div><div><small>Doses registradas</small><strong id="vaccine-count">0</strong><p id="vaccine-stat-summary">0 vacinas distintas</p></div></article>
+            <article class="stat-card"><div class="stat-icon blue">▧</div><div><small>Prontuários</small><strong id="document-count">0</strong><p>Arquivos cifrados fora do banco</p></div></article>
+            <article class="stat-card"><div class="stat-icon green">✓</div><div><small>Integridade</small><strong>SHA-256</strong><p>Hashes no ledger local</p></div></article>
+            <article class="stat-card"><div class="stat-icon purple">⌘</div><div><small>Consentimentos ativos</small><strong id="consent-count">0</strong><p>Temporários e revogáveis</p></div></article>
+          </div>
+          <section class="panel"><div class="panel-head"><div><h2>Atividades recentes</h2><p>Últimos registros que esta identidade pode consultar</p></div><button class="text-button" type="button" data-view-link="historico">Ver histórico →</button></div><div class="timeline" id="timeline"></div></section>
+        </section>
+
+        <section class="view" id="historico">
+          <div class="page-title"><div><p class="eyebrow">FHIR INICIAL</p><h1>Histórico médico</h1><p>Encounter, Observation e Immunization com conteúdo clínico cifrado.</p></div><button class="primary-button" type="button" data-action="new-record">＋ Novo registro</button></div>
+          <div class="panel professional-context hidden"><h2>Acesso profissional</h2><p>Selecione um paciente com consentimento ativo.</p><div class="chip-list" data-patient-access-list></div></div>
+          <div class="panel"><div class="filters"><input id="record-search" type="search" placeholder="Buscar nos registros descriptografados..." /><select id="record-filter"><option value="all">Todos os recursos</option><option>Encounter</option><option>Observation</option><option>Immunization</option></select></div><div class="records-table" id="records-table"></div></div>
+        </section>
+
+        <section class="view" id="documentos">
+          <div class="page-title"><div><p class="eyebrow">DOCUMENTOS CIFRADOS</p><h1>Prontuários enviados</h1><p>PDF, PNG ou JPEG cifrado com AES-256-GCM e verificado por SHA-256.</p></div><button class="primary-button" type="button" data-action="upload-document">＋ Enviar prontuário</button></div>
+          <div class="panel professional-context hidden"><h2>Acesso profissional</h2><p>Selecione um paciente com consentimento ativo.</p><div class="chip-list" data-patient-access-list></div></div>
+          <div class="security-banner"><div class="lock-icon">⌾</div><div><strong>O arquivo original não é persistido em plaintext</strong><p>Somente o conteúdo cifrado é gravado em backend/data/uploads; o SHA-256 permite conferir os bytes originais após a descriptografia.</p></div><span>ATÉ 10 MiB</span></div>
+          <div class="panel document-list" id="document-list"></div>
+        </section>
+
+        <section class="view" id="vacinas"><div class="page-title"><div><p class="eyebrow">FHIR IMMUNIZATION</p><h1>Carteira de vacinação</h1><p>Dados sintéticos de imunização cifrados no backend.</p></div><button class="primary-button" type="button" data-action="new-vaccine">＋ Registrar vacina</button></div><div class="security-banner"><div class="lock-icon">⌾</div><div><strong>Comprovantes usam o fluxo de prontuários cifrados</strong><p>Envie PDF, PNG ou JPEG na área Prontuários; os dados clínicos não ficam no armazenamento local do navegador.</p></div><span>DEMONSTRAÇÃO</span></div><div class="panel"><p id="vaccine-summary" role="status">Nenhuma dose registrada</p><div class="records-table" id="vaccines-list"></div></div></section>
+
+        <section class="view" id="acessos">
+          <div class="page-title"><div><p class="eyebrow">CONSENTIMENTO GRANULAR</p><h1>Consentimentos</h1><p>Acessos temporários com revogação imediata e auditoria.</p></div><button class="primary-button patient-only" type="button" data-action="share">＋ Novo consentimento</button></div>
+          <div class="panel"><div class="access-list detailed" id="consent-list"></div></div>
+        </section>
+
+        <section class="view patient-only" id="auditoria"><div class="page-title"><div><p class="eyebrow">TRILHA AUDITÁVEL</p><h1>Auditoria</h1><p>Eventos sem conteúdo médico sensível nos metadados.</p></div><button class="secondary-button" id="refresh-audit" type="button">Atualizar</button></div><div class="panel audit-list" id="audit-list"></div></section>
+
+        <section class="view patient-only" id="familia"><div class="page-title"><div><p class="eyebrow">FHIR FAMILYMEMBERHISTORY</p><h1>Histórico familiar</h1><p>Organização de condições sintéticas, sem diagnóstico automático.</p></div></div><div class="content-grid family-grid"><form class="panel" id="family-form"><h2>Adicionar familiar fictício</h2><div class="field"><label for="family-relationship">Parentesco</label><select id="family-relationship" name="relationship"><option value="FATHER">Pai</option><option value="MOTHER">Mãe</option><option value="GRANDFATHER">Avô</option><option value="GRANDMOTHER">Avó</option><option value="GREAT_GRANDFATHER">Bisavô</option><option value="GREAT_GRANDMOTHER">Bisavó</option></select></div><div class="field"><label for="family-label">Identificação fictícia</label><input id="family-label" name="relativeLabel" required maxlength="80" /></div><div class="field"><label for="family-conditions">Condições sintéticas, separadas por vírgula</label><textarea id="family-conditions" name="conditions" required maxlength="500"></textarea></div><button class="primary-button" type="submit">Salvar cifrado</button></form><div class="panel"><h2>Árvore inicial</h2><div id="family-list"></div></div></div></section>
+      </main>
+    </div>
+
+    <dialog id="app-dialog"><form id="dialog-form"><button class="dialog-close" type="button" aria-label="Fechar">×</button><div id="dialog-content"></div></form></dialog>
+    <div class="toast" role="status" aria-live="polite" id="toast"></div>
+    <script type="module" src="medchain-app.js"></script>
+  </body>
+</html>

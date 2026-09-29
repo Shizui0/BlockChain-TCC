@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f4f8f5" />
+    <meta name="description" content="Painel inteligente de controle de estoque da FIA Systems." />
+    <title>FIA Systems — Controle de Estoque</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="page-ambient" aria-hidden="true"></div>
+    <div class="sidebar-scrim" id="sidebarScrim"></div>
+
+    <aside class="sidebar" id="sidebar" aria-label="Navegação principal">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">F</span>
+        <span class="brand-copy"><strong>FIA</strong><small>SYSTEMS</small></span>
+      </div>
+
+      <nav class="nav-list">
+        <p class="nav-label">PLATAFORMA</p>
+        <button class="nav-item active" type="button" data-section="Visão geral">
+          <i data-lucide="layout-dashboard"></i><span>Visão geral</span><span class="nav-indicator"></span>
+        </button>
+        <button class="nav-item" type="button" data-section="Produtos">
+          <i data-lucide="package"></i><span>Produtos</span><span class="nav-indicator"></span>
+        </button>
+        <button class="nav-item" type="button" data-section="Movimentações">
+          <i data-lucide="arrow-left-right"></i><span>Movimentações</span><span class="nav-indicator"></span>
+        </button>
+        <button class="nav-item" type="button" data-section="Fornecedores">
+          <i data-lucide="truck"></i><span>Fornecedores</span><span class="nav-indicator"></span>
+        </button>
+        <button class="nav-item" type="button" data-section="Relatórios">
+          <i data-lucide="chart-no-axes-combined"></i><span>Relatórios</span><span class="nav-indicator"></span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="support-card magnetic" type="button" data-magnetic>
+          <span class="support-icon"><i data-lucide="message-circle-question"></i></span>
+          <span><strong>Precisa de ajuda?</strong><small>Fale com o suporte</small></span>
+          <i data-lucide="arrow-up-right"></i>
+        </button>
+        <div class="system-status"><span></span>Sistema operacional</div>
+      </div>
+    </aside>
+
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="topbar-title">
+          <button class="icon-button mobile-menu" id="mobileMenu" type="button" aria-label="Abrir menu">
+            <i data-lucide="menu"></i>
+          </button>
+          <div><span>CONTROLE DE ESTOQUE</span><strong id="sectionTitle">Visão geral</strong></div>
+        </div>
+
+        <div class="topbar-actions">
+          <label class="search-box" aria-label="Pesquisar produtos">
+            <i data-lucide="search"></i>
+            <input id="globalSearch" type="search" placeholder="Pesquisar produto ou SKU" autocomplete="off" />
+            <kbd>Ctrl K</kbd>
+          </label>
+          <button class="icon-button magnetic" id="notificationsButton" type="button" aria-label="Notificações" data-magnetic>
+            <i data-lucide="bell"></i><span class="notification-dot"></span>
+          </button>
+          <button class="profile-button" id="profileButton" type="button" aria-expanded="false">
+            <span class="avatar">AM</span>
+            <span class="profile-copy"><strong>André Martins</strong><small>Administrador</small></span>
+            <i data-lucide="chevron-down"></i>
+          </button>
+        </div>
+      </header>
+
+      <main class="dashboard" id="mainContent">
+        <section class="hero spotlight reveal" data-spotlight style="--delay: 20ms">
+          <div class="hero-texture" aria-hidden="true"><span></span><span></span><span></span></div>
+          <div class="hero-copy">
+            <span class="eyebrow"><i data-lucide="sparkles"></i> PAINEL INTELIGENTE</span>
+            <h1>Visão geral do estoque</h1>
+            <p>Acompanhe a saúde da operação, antecipe rupturas e tome decisões com dados atualizados.</p>
+            <div class="hero-actions">
+              <button class="primary-button magnetic" type="button" data-action="entry" data-magnetic>
+                <i data-lucide="plus"></i>Registrar movimentação
+              </button>
+              <button class="text-button magnetic" type="button" data-action="report" data-magnetic>
+                Ver relatório <i data-lucide="arrow-up-right"></i>
+              </button>
+            </div>
+          </div>
+          <div class="hero-health" aria-label="Saúde do estoque: 94 por cento">
+            <div class="health-ring"><strong>94%</strong><span>saudável</span></div>
+            <p><span></span>Operação dentro do esperado</p>
+            <small>Atualizado agora</small>
+          </div>
+        </section>
+
+        <section class="section-block reveal" style="--delay: 90ms" aria-labelledby="quickTitle">
+          <div class="section-heading compact">
+            <div><span class="section-kicker">ACESSO DIRETO</span><h2 id="quickTitle">Ações rápidas</h2></div>
+            <span class="section-note">Atalhos mais utilizados</span>
+          </div>
+          <div class="quick-grid">
+            <button class="quick-action reactive-card" type="button" data-action="entry">
+              <span class="quick-icon mint"><i data-lucide="package-plus"></i></span>
+              <span><strong>Nova entrada</strong><small>Adicionar itens ao estoque</small></span>
+              <i class="quick-arrow" data-lucide="arrow-right"></i>
+            </button>
+            <button class="quick-action reactive-card" type="button" data-action="exit">
+              <span class="quick-icon sand"><i data-lucide="package-minus"></i></span>
+              <span><strong>Nova saída</strong><small>Registrar retirada de itens</small></span>
+              <i class="quick-arrow" data-lucide="arrow-right"></i>
+            </button>
+            <button class="quick-action reactive-card" type="button" data-action="product">
+              <span class="quick-icon sky"><i data-lucide="tags"></i></span>
+              <span><strong>Novo produto</strong><small>Cadastrar item no catálogo</small></span>
+              <i class="quick-arrow" data-lucide="arrow-right"></i>
+            </button>
+            <button class="quick-action reactive-card" type="button" data-action="report">
+              <span class="quick-icon lilac"><i data-lucide="file-chart-column"></i></span>
+              <span><strong>Gerar relatório</strong><small>Exportar posição atual</small></span>
+              <i class="quick-arrow" data-lucide="arrow-right"></i>
+            </button>
+          </div>
+        </section>
+
+        <section class="metrics-grid reveal" style="--delay: 160ms" aria-label="Indicadores principais">
+          <article class="metric-card reactive-card spotlight" data-spotlight>
+            <div class="metric-top"><span class="metric-icon"><i data-lucide="boxes"></i></span><span class="trend positive"><i data-lucide="trending-up"></i>8,4%</span></div>
+            <p>Total de produtos</p><strong class="metric-value" data-count="1248">1.248</strong><small>102 novos neste mês</small>
+          </article>
+          <article class="metric-card reactive-card spotlight" data-spotlight>
+            <div class="metric-top"><span class="metric-icon"><i data-lucide="layers-3"></i></span><span class="trend positive"><i data-lucide="trending-up"></i>3,2%</span></div>
+            <p>Unidades em estoque</p><strong class="metric-value" data-count="8653">8.653</strong><small>Distribuídas em 12 categorias</small>
+          </article>
+          <article class="metric-card reactive-card spotlight warning-card" data-spotlight>
+            <div class="metric-top"><span class="metric-icon"><i data-lucide="triangle-alert"></i></span><span class="trend warning">Atenção</span></div>
+            <p>Estoque baixo</p><strong class="metric-value" data-count="23">23</strong><small>7 itens em estado crítico</small>
+          </article>
+          <article class="metric-card reactive-card spotlight" data-spotlight>
+            <div class="metric-top"><span class="metric-icon"><i data-lucide="circle-dollar-sign"></i></span><span class="trend positive"><i data-lucide="trending-up"></i>6,1%</span></div>
+            <p>Valor do inventário</p><strong class="metric-value currency" data-count="128746.5">R$ 128.746,50</strong><small>Valor de custo estimado</small>
+          </article>
+        </section>
+
+        <section class="analytics-grid reveal" style="--delay: 230ms">
+          <article class="panel chart-panel spotlight" data-spotlight>
+            <div class="panel-header">
+              <div><span class="section-kicker">MOVIMENTAÇÃO</span><h2>Fluxo de estoque</h2><p>Entradas e saídas dos últimos 7 dias</p></div>
+              <div class="segmented" role="group" aria-label="Período do gráfico">
+                <button class="active" type="button" data-period="7">7D</button><button type="button" data-period="30">30D</button><button type="button" data-period="90">90D</button>
+              </div>
+            </div>
+            <div class="chart-legend"><span><i class="dot entry"></i>Entradas</span><span><i class="dot exit"></i>Saídas</span><strong>+18,6% <small>saldo positivo</small></strong></div>
+            <div class="bar-chart" id="barChart" aria-label="Gráfico de entradas e saídas por dia"></div>
+          </article>
+
+          <article class="panel donut-panel spotlight" data-spotlight>
+            <div class="panel-header"><div><span class="section-kicker">COMPOSIÇÃO</span><h2>Estoque por categoria</h2><p>Distribuição das unidades</p></div><button class="icon-button magnetic" type="button" aria-label="Mais opções" data-magnetic><i data-lucide="ellipsis"></i></button></div>
+            <div class="donut-wrap">
+              <svg class="donut-chart" viewBox="0 0 120 120" role="img" aria-label="Distribuição por categoria">
+                <circle class="donut-track" cx="60" cy="60" r="46"></circle>
+                <circle class="donut-segment segment-a" data-category="Eletrônicos" data-value="52" cx="60" cy="60" r="46"></circle>
+                <circle class="donut-segment segment-b" data-category="Suprimentos" data-value="29" cx="60" cy="60" r="46"></circle>
+                <circle class="donut-segment segment-c" data-category="Acessórios" data-value="19" cx="60" cy="60" r="46"></circle>
+              </svg>
+              <div class="donut-center"><strong>8.653</strong><span>unidades</span></div>
+            </div>
+            <div class="category-list">
+              <button type="button" data-category-target="Eletrônicos"><span><i class="dot category-a"></i>Eletrônicos</span><strong>52% <small>4.500</small></strong></button>
+              <button type="button" data-category-target="Suprimentos"><span><i class="dot category-b"></i>Suprimentos</span><strong>29% <small>2.509</small></strong></button>
+              <button type="button" data-category-target="Acessórios"><span><i class="dot category-c"></i>Acessórios</span><strong>19% <small>1.644</small></strong></button>
+            </div>
+          </article>
+        </section>
+
+        <section class="panel table-panel reveal" style="--delay: 300ms">
+          <div class="panel-header table-heading">
+            <div><span class="section-kicker">ACOMPANHAMENTO</span><h2>Produtos recentes</h2><p>Itens movimentados e pontos de atenção</p></div>
+            <button class="outline-button magnetic" type="button" data-section-link="Produtos" data-magnetic>Ver todos <i data-lucide="arrow-right"></i></button>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Produto</th><th>SKU</th><th>Categoria</th><th>Estoque</th><th>Valor unitário</th><th>Status</th><th><span class="sr-only">Ações</span></th></tr></thead>
+              <tbody id="productTableBody"></tbody>
+            </table>
+          </div>
+          <div class="table-footer"><span id="tableCount">Mostrando 6 de 1.248 produtos</span><button type="button" class="text-button" data-section-link="Produtos">Explorar catálogo <i data-lucide="arrow-right"></i></button></div>
+        </section>
+
+        <footer class="page-footer"><span>© 2026 FIA Systems</span><span>Dados sincronizados há poucos segundos</span></footer>
+      </main>
+    </div>
+
+    <div class="floating-panel notifications-panel" id="notificationsPanel" hidden>
+      <div class="floating-header"><strong>Notificações</strong><button class="icon-button" type="button" data-close-panel aria-label="Fechar"><i data-lucide="x"></i></button></div>
+      <button type="button"><span class="alert-icon"><i data-lucide="triangle-alert"></i></span><span><strong>7 produtos em nível crítico</strong><small>Revise os pontos de reposição</small></span></button>
+      <button type="button"><span class="success-icon"><i data-lucide="circle-check"></i></span><span><strong>Entrada processada</strong><small>Pedido #7842 recebido por completo</small></span></button>
+    </div>
+
+    <div class="floating-panel profile-panel" id="profilePanel" hidden>
+      <button type="button"><i data-lucide="user-round"></i>Minha conta</button>
+      <button type="button"><i data-lucide="settings-2"></i>Preferências</button>
+      <button type="button"><i data-lucide="log-out"></i>Sair</button>
+    </div>
+
+    <div class="chart-tooltip" id="chartTooltip" role="status" hidden></div>
+
+    <dialog class="action-dialog" id="actionDialog" aria-labelledby="dialogTitle">
+      <form method="dialog" class="dialog-shell" id="actionForm">
+        <div class="dialog-header">
+          <div><span class="section-kicker" id="dialogKicker">MOVIMENTAÇÃO</span><h2 id="dialogTitle">Registrar entrada</h2><p id="dialogDescription">Atualize o saldo de um produto.</p></div>
+          <button class="icon-button" type="button" id="dialogClose" aria-label="Fechar"><i data-lucide="x"></i></button>
+        </div>
+        <div class="dialog-fields" id="dialogFields"></div>
+        <div class="dialog-actions"><button class="ghost-button" type="button" id="dialogCancel">Cancelar</button><button class="primary-button" type="submit" id="dialogSubmit">Confirmar</button></div>
+      </form>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"><span><i data-lucide="circle-check"></i></span><div><strong id="toastTitle">Alteração salva</strong><small id="toastMessage">Os dados foram atualizados.</small></div></div>
+
+    <script src="/vendor/lucide.min.js"></script>
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
