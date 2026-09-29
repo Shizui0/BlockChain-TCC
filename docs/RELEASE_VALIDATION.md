@@ -30,10 +30,25 @@ acesso HTTPS funcional ao npm é necessário para o ensaio local reproduzível.
 
 ## CI
 
-O workflow da release executa instalação limpa, suíte, checagem sintática, audit,
-seed duas vezes e `npm start`, com verificação HTTP da página e do JavaScript.
-Resultado do CI será registrado após a execução do PR. Artefato:
-`presentation-validation`, contendo somente logs, sem `.env` ou banco.
+Execução [36641719198](https://github.com/Shizui0/BlockChain-TCC/actions/runs/36641719198)
+da candidata `66b0e71a8302acc336cbfc4c6d4c6d777870be0d`: Ubuntu, Node 22.
+
+| Verificação | Resultado confirmado nos logs |
+|---|---|
+| `npm ci` | Instalação limpa concluída |
+| `npm test` | 20 casos, 20 passando, 0 falhando, 0 ignorados |
+| `npm run check` | 44 arquivos aprovados |
+| `npm audit --audit-level=high` | 0 altas/críticas; 2 moderadas (`ip-address`, `qs`) |
+| `git diff --check` | Aprovado |
+| Setup, seed duas vezes e `npm start` | Aprovados; HTML e JavaScript retornados por HTTP |
+
+O novo caso cobre a demo integrada e replay do cookie após logout. Os testes já
+existentes cobrem adulteração de ciphertext/metadados, AES-GCM, uploads, permissões,
+expiração e auditoria. Isso não equivale a auditoria completa de segurança.
+
+O workflow usa Bash com `pipefail` para que `tee` não mascare falhas e verifica
+o SHA da branch do PR. O resultado do commit final deve ser consultado no PR #4.
+Artefato `presentation-validation`: somente logs, sem `.env` ou banco.
 
 ## Checklist de frontend e demonstração
 
@@ -53,6 +68,7 @@ Resultado do CI será registrado após a execução do PR. Artefato:
 
 ## Decisão de congelamento
 
-Ainda não declarar pronta para demonstração enquanto a instalação/seed/início e
-o checklist visual não forem validados no ambiente de apresentação, e o CI não
-estiver aprovado. Sem merge automático; sem tag enquanto houver bloqueadores.
+O fluxo de backend e instalação Linux foram validados no CI. Ainda não declarar
+pronta para demonstração enquanto a instalação/seed/início no computador da banca
+e o checklist visual não forem validados. A instalação Windows local segue bloqueada
+pelo certificado da rede. Sem merge automático; sem tag enquanto houver bloqueadores.

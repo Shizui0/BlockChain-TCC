@@ -8,12 +8,19 @@ on:
 permissions:
   contents: read
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 2
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -22,7 +29,7 @@ jobs:
       - run: npm run check 2>&1 | tee check.log
       - run: npm test 2>&1 | tee tests.log
       - run: npm audit --audit-level=high 2>&1 | tee audit.log
-      - run: git diff --check
+      - run: git diff --check HEAD^ HEAD
       - name: Prepare synthetic demo and check startup
         run: |
           npm run demo:setup
