@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createTestContext, DEMO_PASSWORD, DEMO_USERS } from './test-helpers.js';
+import { createTestContext, DEMO_PASSWORD, DEMO_USERS, loginAgent } from './test-helpers.js';
 
 describe('autenticação', () => {
   let context;
@@ -39,12 +39,7 @@ describe('autenticação', () => {
   });
 
   test('revoga a sessão no logout e impede reutilizar o cookie', async () => {
-    const agent = context.request.agent();
-    const login = await agent.post('/api/auth/login').send({
-      email: DEMO_USERS.patient.email,
-      password: DEMO_PASSWORD
-    });
-    assert.equal(login.status, 200);
+    const agent = await loginAgent(context.app, DEMO_USERS.patient.email);
     assert.equal((await agent.get('/api/me')).status, 200);
     assert.equal((await agent.post('/api/auth/logout')).status, 204);
     assert.equal((await agent.get('/api/me')).status, 401);
