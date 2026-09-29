@@ -18,9 +18,7 @@ export class CryptoService {
   }
 
   encrypt(value, context) {
-    const iv = randomBytes(12);
-    const cipher = createCipheriv('aes-256-gcm', this.key, iv);
-    cipher.setAAD(Buffer.from(canonicalJson(context)));
+    const { cipher, iv } = this.createCipher(context);
     const ciphertext = Buffer.concat([
       cipher.update(canonicalJson(value), 'utf8'),
       cipher.final()
@@ -34,9 +32,7 @@ export class CryptoService {
   }
 
   encryptBuffer(value, context) {
-    const iv = randomBytes(12);
-    const cipher = createCipheriv('aes-256-gcm', this.key, iv);
-    cipher.setAAD(Buffer.from(canonicalJson(context)));
+    const { cipher, iv } = this.createCipher(context);
     const ciphertext = Buffer.concat([cipher.update(value), cipher.final()]);
     return {
       ciphertext,
@@ -47,13 +43,7 @@ export class CryptoService {
   }
 
   decrypt(protectedValue, context) {
-    const decipher = createDecipheriv(
-      'aes-256-gcm',
-      this.key,
-      Buffer.from(protectedValue.iv, 'base64')
-    );
-    decipher.setAAD(Buffer.from(canonicalJson(context)));
-    decipher.setAuthTag(Buffer.from(protectedValue.authTag, 'base64'));
+    const decipher = this.createDecipher(protectedValue, context);
     const plaintext = Buffer.concat([
       decipher.update(Buffer.from(protectedValue.ciphertext, 'base64')),
       decipher.final()
@@ -62,6 +52,21 @@ export class CryptoService {
   }
 
   decryptBuffer(protectedValue, context) {
+    const decipher = this.createDecipher(protectedValue, context);
+    return Buffer.concat([
+      decipher.update(protectedValue.ciphertext),
+      decipher.final()
+    ]);
+  }
+
+  createCipher(context) {
+    const iv = randomBytes(12);
+    const cipher = createCipheriv('aes-256-gcm', this.key, iv);
+    cipher.setAAD(Buffer.from(canonicalJson(context)));
+    return { cipher, iv };
+  }
+
+  createDecipher(protectedValue, context) {
     const decipher = createDecipheriv(
       'aes-256-gcm',
       this.key,
@@ -69,9 +74,6 @@ export class CryptoService {
     );
     decipher.setAAD(Buffer.from(canonicalJson(context)));
     decipher.setAuthTag(Buffer.from(protectedValue.authTag, 'base64'));
-    return Buffer.concat([
-      decipher.update(protectedValue.ciphertext),
-      decipher.final()
-    ]);
+    return decipher;
   }
 }

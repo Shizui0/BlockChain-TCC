@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { badRequest, conflict, notFound } from '../errors.js';
+import { conflict, notFound } from '../errors.js';
+import { resolvePatientId } from '../utils/patient-access.js';
 import { AUDIT_EVENTS } from './audit-service.js';
 import { recordToFhir } from './fhir-service.js';
 
@@ -34,12 +35,6 @@ export class RecordService {
     this.audit = auditService;
   }
 
-  patientFor(actor, requestedPatientId) {
-    if (actor.role === 'PATIENT') return actor.id;
-    if (!requestedPatientId) throw badRequest('patientId é obrigatório para profissionais e administradores.');
-    return requestedPatientId;
-  }
-
   present(record) {
     const context = { recordId: record.id, patientId: record.patientId, resourceType: record.resourceType };
     const clinicalData = this.crypto.decrypt(record, context);
@@ -61,7 +56,7 @@ export class RecordService {
   }
 
   create(actor, { patientId: requestedPatientId, resourceType, clinicalData }) {
-    const patientId = this.patientFor(actor, requestedPatientId);
+    const patientId = resolvePatientId(actor, requestedPatientId);
     this.consents.assertAccess(actor, patientId, 'WRITE');
     const patient = this.database.prepare('SELECT user_id FROM patients WHERE user_id = ?').get(patientId);
     if (!patient) throw notFound('Paciente não encontrado.');
@@ -96,7 +91,7 @@ export class RecordService {
   }
 
   list(actor, requestedPatientId) {
-    const patientId = this.patientFor(actor, requestedPatientId);
+    const patientId = resolvePatientId(actor, requestedPatientId);
     this.consents.assertAccess(actor, patientId, 'READ');
     const records = this.database.prepare(`${selectRecord} WHERE patient_id = ? ORDER BY created_at DESC`)
       .all(patientId).map(mapRow);

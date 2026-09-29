@@ -2,6 +2,7 @@ import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import { basename, resolve, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { badRequest, conflict, notFound } from '../errors.js';
+import { resolvePatientId } from '../utils/patient-access.js';
 import { AUDIT_EVENTS } from './audit-service.js';
 
 const MIME_TYPES = Object.freeze({
@@ -74,12 +75,6 @@ export class DocumentService {
     this.uploadDirectory = resolve(uploadDirectory);
   }
 
-  patientFor(actor, requestedPatientId) {
-    if (actor.role === 'PATIENT') return actor.id;
-    if (!requestedPatientId) throw badRequest('patientId é obrigatório para profissionais e administradores.');
-    return requestedPatientId;
-  }
-
   storagePath(storageName) {
     if (!/^[0-9a-f-]{36}\.enc$/i.test(storageName)) throw conflict('Referência de armazenamento inválida.');
     const path = resolve(this.uploadDirectory, storageName);
@@ -121,7 +116,7 @@ export class DocumentService {
 
   async create(actor, { patientId: requestedPatientId, description }, file) {
     if (!file?.buffer?.length) throw badRequest('Selecione um arquivo de prontuário.');
-    const patientId = this.patientFor(actor, requestedPatientId);
+    const patientId = resolvePatientId(actor, requestedPatientId);
     this.consents.assertAccess(actor, patientId, 'WRITE');
     const patient = this.database.prepare('SELECT user_id FROM patients WHERE user_id = ?').get(patientId);
     if (!patient) throw notFound('Paciente não encontrado.');
@@ -198,7 +193,7 @@ export class DocumentService {
   }
 
   list(actor, requestedPatientId) {
-    const patientId = this.patientFor(actor, requestedPatientId);
+    const patientId = resolvePatientId(actor, requestedPatientId);
     this.consents.assertAccess(actor, patientId, 'READ');
     const documents = this.database.prepare(`${selectDocument} WHERE d.patient_id = ? ORDER BY d.created_at DESC`)
       .all(patientId).map(mapRow);

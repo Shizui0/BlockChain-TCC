@@ -1,4 +1,4 @@
-import { loadConfig } from '../config.js';
+import { loadConfig } from '../config/index.js';
 import { createDatabase } from './database.js';
 import { seedDatabase } from './seed.js';
 import { createServices } from '../services/index.js';

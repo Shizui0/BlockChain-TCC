@@ -5,7 +5,7 @@ import cookieParser from 'cookie-parser';
 import { rateLimit } from 'express-rate-limit';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
-import { loadConfig } from './config.js';
+import { loadConfig } from './config/index.js';
 import { createDatabase } from './db/database.js';
 import { seedDatabase } from './db/seed.js';
 import { createServices } from './services/index.js';
