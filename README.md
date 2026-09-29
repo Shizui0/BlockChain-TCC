@@ -47,6 +47,21 @@ O MVP utiliza SQLite por simplicidade local. O acesso está concentrado em servi
 
 ## Configuração
 
+Para a apresentação, siga o [roteiro oficial](docs/DEMO.md) e confira o
+[estado de validação da release](docs/RELEASE_VALIDATION.md).
+Com Node 22, a preparação local é:
+
+```bash
+npm ci
+npm run demo:setup
+npm run seed
+npm start
+```
+
+`demo:setup` gera segredos aleatórios em `.env` e preserva um arquivo existente.
+O seed é explícito (`SEED_DEMO=false` no exemplo). A configuração manual abaixo
+continua disponível.
+
 ```powershell
 Copy-Item .env.example .env
 node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"

@@ -18,6 +18,33 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npm run check
-      - run: npm test
+      - run: npm ci 2>&1 | tee npm-ci.log
+      - run: npm run check 2>&1 | tee check.log
+      - run: npm test 2>&1 | tee tests.log
+      - run: npm audit --audit-level=high 2>&1 | tee audit.log
+      - run: git diff --check
+      - name: Prepare synthetic demo and check startup
+        run: |
+          npm run demo:setup
+          npm run seed
+          npm run seed
+          npm start > startup.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:4173/ -o /tmp/medchain-index.html; then break; fi
+            sleep 1
+          done
+          grep -q 'Entrar no ambiente de demonstração' /tmp/medchain-index.html
+          curl --fail --silent http://localhost:4173/medchain-app.js -o /dev/null
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: presentation-validation
+          path: |
+            npm-ci.log
+            check.log
+            tests.log
+            audit.log
+            startup.log
+          retention-days: 30
