@@ -8,6 +8,16 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS sessions (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  expires_at TEXT NOT NULL,
+  revoked_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_sessions_active
+  ON sessions(id, user_id, expires_at, revoked_at);
+
 CREATE TABLE IF NOT EXISTS patients (
   user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
   synthetic INTEGER NOT NULL DEFAULT 1 CHECK (synthetic IN (0, 1))

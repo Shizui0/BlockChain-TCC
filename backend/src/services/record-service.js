@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { badRequest, notFound } from '../errors.js';
+import { badRequest, conflict, notFound } from '../errors.js';
 import { AUDIT_EVENTS } from './audit-service.js';
 import { recordToFhir } from './fhir-service.js';
 
@@ -55,6 +55,11 @@ export class RecordService {
     };
   }
 
+  assertIntegrity(record) {
+    const integrity = this.integrity.verify(record);
+    if (!integrity.valid) throw conflict('A integridade do registro médico não pôde ser confirmada.');
+  }
+
   create(actor, { patientId: requestedPatientId, resourceType, clinicalData }) {
     const patientId = this.patientFor(actor, requestedPatientId);
     this.consents.assertAccess(actor, patientId, 'WRITE');
@@ -101,7 +106,10 @@ export class RecordService {
       patientId,
       metadata: { recordCount: records.length }
     });
-    return records.map((record) => this.present(record));
+    return records.map((record) => {
+      this.assertIntegrity(record);
+      return this.present(record);
+    });
   }
 
   findProtected(recordId) {
@@ -113,6 +121,7 @@ export class RecordService {
   get(actor, recordId) {
     const record = this.findProtected(recordId);
     this.consents.assertAccess(actor, record.patientId, 'READ', record.id);
+    this.assertIntegrity(record);
     this.audit.record({
       eventType: AUDIT_EVENTS.RECORD_VIEWED,
       actorId: actor.id,

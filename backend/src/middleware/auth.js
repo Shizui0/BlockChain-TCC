@@ -16,7 +16,14 @@ export function createAuthMiddleware(config, database) {
         FROM users WHERE id = ?
       `).get(payload.sub);
       if (!user || user.role !== payload.role) throw unauthorized('Sessão inválida.');
+      if (typeof payload.jti !== 'string' || !database.prepare(`
+        SELECT id FROM sessions
+        WHERE id = ? AND user_id = ? AND revoked_at IS NULL AND expires_at > ?
+      `).get(payload.jti, user.id, new Date().toISOString())) {
+        throw unauthorized('Sessão inválida ou encerrada.');
+      }
       request.user = user;
+      request.sessionId = payload.jti;
       next();
     } catch (error) {
       if (error.status) return next(error);

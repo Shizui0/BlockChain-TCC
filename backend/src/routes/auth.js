@@ -30,7 +30,7 @@ function publicUser(user) {
   return { id: user.id, email: user.email, role: user.role, displayName: user.displayName };
 }
 
-export function createAuthRouter({ database, config, audit }) {
+export function createAuthRouter({ database, config, audit, authenticate }) {
   const router = Router();
 
   router.post('/register', validate(registerSchema), asyncHandler(async (request, response) => {
@@ -65,9 +65,15 @@ export function createAuthRouter({ database, config, audit }) {
     `).get(request.body.email);
     const valid = await bcrypt.compare(request.body.password, user?.passwordHash ?? dummyPasswordHash);
     if (!user || !valid) throw unauthorized('E-mail ou senha inválidos.');
+    const sessionId = randomUUID();
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
     const token = jwt.sign({ role: user.role }, config.jwtSecret, {
-      algorithm: 'HS256', subject: user.id, issuer: 'medchain', audience: 'medchain-web', expiresIn: '1h'
+      algorithm: 'HS256', subject: user.id, issuer: 'medchain', audience: 'medchain-web',
+      expiresIn: '1h', jwtid: sessionId
     });
+    database.prepare(`
+      INSERT INTO sessions (id, user_id, expires_at, revoked_at) VALUES (?, ?, ?, NULL)
+    `).run(sessionId, user.id, expiresAt);
     response.cookie('medchain_session', token, {
       httpOnly: true,
       secure: config.secureCookies,
@@ -84,7 +90,9 @@ export function createAuthRouter({ database, config, audit }) {
     response.json({ user: publicUser(user) });
   }));
 
-  router.post('/logout', (_request, response) => {
+  router.post('/logout', authenticate, (request, response) => {
+    database.prepare('UPDATE sessions SET revoked_at = ? WHERE id = ? AND revoked_at IS NULL')
+      .run(new Date().toISOString(), request.sessionId);
     response.clearCookie('medchain_session', { httpOnly: true, sameSite: 'strict', path: '/' });
     response.status(204).end();
   });
