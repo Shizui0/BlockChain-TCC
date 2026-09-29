@@ -47,6 +47,19 @@ describe('registros cifrados e integridade', () => {
     assert.equal(invalid.body.databaseValid, false);
   });
 
+  test('bloqueia leitura de registro com metadata protegida adulterada', async () => {
+    const created = await patient.post('/api/records').send({
+      resourceType: 'Observation',
+      clinicalData: { code: 'Metadata protegida', value: 'não deve ser exposto' }
+    });
+    assert.equal(created.status, 201);
+    context.database.prepare('UPDATE medical_records SET updated_at = ? WHERE id = ?')
+      .run('2030-01-01T00:00:00.000Z', created.body.record.id);
+    const response = await patient.get(`/api/records/${created.body.record.id}`);
+    assert.equal(response.status, 409);
+    assert.equal(response.body.error.code, 'CONFLICT');
+  });
+
   test('preserva os campos da carteira de vacinação cifrados e produz FHIR Immunization', async () => {
     const created = await patient.post('/api/records').send({
       resourceType: 'Immunization',
