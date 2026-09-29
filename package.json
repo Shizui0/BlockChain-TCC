@@ -5,6 +5,7 @@
   "type": "module",
   "description": "MVP de prontuário médico seguro e controlado pelo paciente",
   "scripts": {
+    "demo:setup": "node scripts/setup-demo.mjs",
     "start": "node backend/src/server.js",
     "dev": "node --watch backend/src/server.js",
     "seed": "node backend/src/db/seed-cli.js",
