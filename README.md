@@ -37,11 +37,11 @@ Express REST API ── autenticação/cookies HttpOnly
                   Hyperledger Fabric
 ```
 
-O MVP utiliza SQLite por simplicidade local. O acesso está concentrado em serviços e consultas preparadas, permitindo substituir a persistência por PostgreSQL sem alterar o contrato HTTP ou a interface de criptografia.
+O MVP utiliza SQLite por simplicidade local. O acesso está concentrado em serviços e consultas preparadas, permitindo substituir a persistência por PostgreSQL sem alterar o contrato HTTP ou a interface de criptografia. A composição da aplicação fica em `backend/src/app.js`; rotas mantêm apenas o contrato HTTP e delegam regras de domínio aos serviços.
 
 ## Requisitos
 
-- Node.js 22 LTS (versões 22.x; o MVP ainda não é compatível com Node.js 24);
+- Node.js 22 LTS (22.x; consulte `.nvmrc`; o MVP ainda não é compatível com Node.js 24);
 - npm;
 - nenhuma instalação local de PostgreSQL é necessária nesta fase.
 
@@ -55,10 +55,10 @@ node -e "console.log(require('node:crypto').randomBytes(48).toString('base64url'
 
 Copie o primeiro valor para `MEDCHAIN_MASTER_KEY` e o segundo para `JWT_SECRET` no arquivo `.env`. O `.env` é ignorado pelo Git.
 
-Depois execute:
+Depois instale exatamente as dependências do lockfile e inicie:
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
@@ -87,6 +87,22 @@ npm start      # servidor sem watch
 npm run seed   # seed sintético idempotente
 npm test       # testes automatizados
 npm run check  # valida sintaxe de backend, testes e frontend
+```
+
+## Estrutura do projeto
+
+```text
+frontend/public/             interface web estática e cliente da API
+backend/src/
+├── config/                  leitura e validação de ambiente
+├── db/                      SQLite, schema e seed sintético
+├── middleware/              autenticação, autorização HTTP, validação e erros
+├── routes/                  contratos REST sem regras clínicas extensas
+├── services/                domínio: Auth, Crypto, Integrity, Record, Consent,
+│                            Audit, Ledger, Documents, FamilyHistory e FHIR
+└── utils/                   serialização canônica e helpers compartilhados
+backend/test/                regressões de API, segurança e fluxos integrados
+docs/                        arquitetura, segurança, FHIR, ledger e ameaças
 ```
 
 ## API inicial
@@ -129,6 +145,14 @@ npm run check  # valida sintaxe de backend, testes e frontend
 ## Consolidação da Fase 1.1
 
 Esta base consolida a arquitetura funcional da branch `agent/medchain-core-mvp` com os fluxos de carteira de vacinação, indicadores e autorizações que evoluíram na `main`. A carteira foi adaptada para usar registros `Immunization` cifrados na API em vez do `localStorage` da interface anterior. Os comprovantes permanecem no fluxo existente de documentos cifrados, que valida tipo/tamanho e registra integridade. A branch histórica `codex/desenvolver-sistema-de-controle-de-historico-medico` foi analisada: sua interface inicial já está contida e superada por essas duas linhas, portanto não exigiu cópia adicional.
+
+## Organização da Fase 1.3
+
+- `backend/src/config/index.js` centraliza leitura de ambiente; o antigo `config.js` é somente uma reexportação de compatibilidade;
+- Records e Documents reutilizam a mesma resolução de paciente para preservar regras idênticas de acesso;
+- CryptoService mantém AES-256-GCM em uma única implementação para JSON e buffers;
+- `.env.example` documenta todas as variáveis e `.env` permanece ignorado;
+- os contratos REST, o modelo SQLite e os fluxos demonstráveis continuam inalterados.
 
 ## Limitações
 

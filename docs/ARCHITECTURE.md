@@ -16,14 +16,35 @@ Browser
              ├─ autenticação JWT/cookie
              ├─ validação e autorização
              ├─ serviços de domínio
-             │    ├─ CryptoService
-             │    ├─ RecordService
-             │    ├─ ConsentService
-             │    ├─ AuditService
-             │    ├─ IntegrityService
-             │    └─ LedgerService
+             │    ├─ Auth: rota + middleware de sessão JWT
+             │    ├─ CryptoService: AES-256-GCM e AAD canônica
+             │    ├─ RecordService: prontuários e projeção FHIR
+             │    ├─ DocumentService: arquivos cifrados e metadados
+             │    ├─ ConsentService: permissões e revogação
+             │    ├─ AuditService: eventos sem conteúdo clínico
+             │    ├─ IntegrityService: SHA-256 e verificação
+             │    ├─ LedgerService: prova local pseudonimizada
+             │    ├─ FamilyHistoryService: histórico familiar cifrado
+             │    └─ FHIRService: mapeamentos FHIR parciais
              └─ SQLite via consultas preparadas
 ```
+
+## Organização de código
+
+```text
+frontend/public/       interface e cliente REST
+backend/src/
+├── config/            configuração de ambiente validada
+├── db/                conexão, schema e seed
+├── middleware/        sessão, papéis, validação e tratamento de erros
+├── routes/            endpoints e schemas de entrada
+├── services/          regras de domínio e persistência coordenada
+└── utils/             serialização canônica, async handler e acesso compartilhado
+backend/test/          regressões de integração e segurança
+docs/                  decisões, segurança, FHIR, ledger e ameaças
+```
+
+`backend/src/config.js` reexporta a configuração de `config/index.js` para manter compatibilidade com importações internas históricas. Novos módulos devem usar `config/index.js` diretamente. A configuração vem de ambiente, é exemplificada em `.env.example` e nunca inclui segredos reais no repositório.
 
 ## Modelo de dados
 
@@ -77,6 +98,14 @@ O nome original e a descrição ficam dentro do payload de metadados cifrado. O 
 - profissional precisa de consentimento não revogado, não expirado e compatível com `READ` ou `WRITE`;
 - cada falha gera `ACCESS_DENIED` associada ao paciente e sem conteúdo clínico;
 - a revogação atualiza o consentimento dentro de transação e afeta a próxima requisição.
+
+## Limites de responsabilidade
+
+- rotas validam a entrada e traduzem requisições/respostas HTTP;
+- middleware autentica, aplica papéis e uniformiza erros;
+- serviços concentram regras, transações, criptografia, integridade e auditoria;
+- `db/` contém apenas conexão, schema e dados sintéticos de demonstração;
+- `utils/` contém helpers sem regra clínica, como serialização determinística e resolução reutilizável do paciente alvo.
 
 ## Migração para PostgreSQL
 
