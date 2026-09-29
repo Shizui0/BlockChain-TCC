@@ -46,4 +46,20 @@ describe('registros cifrados e integridade', () => {
     assert.equal(invalid.body.valid, false);
     assert.equal(invalid.body.databaseValid, false);
   });
+
+  test('preserva os campos da carteira de vacinação cifrados e produz FHIR Immunization', async () => {
+    const created = await patient.post('/api/records').send({
+      resourceType: 'Immunization',
+      clinicalData: {
+        code: 'Vacina sintética', dose: '2ª dose', institution: 'UBS Demonstração',
+        occurrenceDateTime: '2026-09-29T12:00:00.000Z', status: 'completed'
+      }
+    });
+    assert.equal(created.status, 201);
+    assert.equal(created.body.record.clinicalData.dose, '2ª dose');
+    assert.equal(created.body.record.fhir.protocolApplied[0].doseNumberString, '2ª dose');
+    assert.equal(created.body.record.fhir.location.display, 'UBS Demonstração');
+    const raw = context.database.prepare('SELECT ciphertext FROM medical_records WHERE id = ?').get(created.body.record.id);
+    assert.equal(raw.ciphertext.includes('UBS Demonstração'), false);
+  });
 });

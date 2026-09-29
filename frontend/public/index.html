@@ -57,6 +57,7 @@
           <div class="security-banner"><div class="lock-icon">⌾</div><div><strong>Arquitetura projetada considerando princípios da LGPD</strong><p>Este protótipo acadêmico não representa conformidade jurídica ou operacional.</p></div><span>DEMONSTRAÇÃO</span></div>
           <div class="stats-grid">
             <article class="stat-card"><div class="stat-icon blue">▤</div><div><small>Registros acessíveis</small><strong id="record-count">0</strong><p>Conteúdo cifrado no banco</p></div></article>
+            <article class="stat-card"><div class="stat-icon blue">✚</div><div><small>Doses registradas</small><strong id="vaccine-count">0</strong><p id="vaccine-stat-summary">0 vacinas distintas</p></div></article>
             <article class="stat-card"><div class="stat-icon blue">▧</div><div><small>Prontuários</small><strong id="document-count">0</strong><p>Arquivos cifrados fora do banco</p></div></article>
             <article class="stat-card"><div class="stat-icon green">✓</div><div><small>Integridade</small><strong>SHA-256</strong><p>Hashes no ledger local</p></div></article>
             <article class="stat-card"><div class="stat-icon purple">⌘</div><div><small>Consentimentos ativos</small><strong id="consent-count">0</strong><p>Temporários e revogáveis</p></div></article>
@@ -77,7 +78,7 @@
           <div class="panel document-list" id="document-list"></div>
         </section>
 
-        <section class="view" id="vacinas"><div class="page-title"><div><p class="eyebrow">FHIR IMMUNIZATION</p><h1>Carteira de vacinação</h1><p>Somente dados sintéticos de imunização.</p></div></div><div class="panel" id="vaccines-list"></div></section>
+        <section class="view" id="vacinas"><div class="page-title"><div><p class="eyebrow">FHIR IMMUNIZATION</p><h1>Carteira de vacinação</h1><p>Dados sintéticos de imunização cifrados no backend.</p></div><button class="primary-button" type="button" data-action="new-vaccine">＋ Registrar vacina</button></div><div class="security-banner"><div class="lock-icon">⌾</div><div><strong>Comprovantes usam o fluxo de prontuários cifrados</strong><p>Envie PDF, PNG ou JPEG na área Prontuários; os dados clínicos não ficam no armazenamento local do navegador.</p></div><span>DEMONSTRAÇÃO</span></div><div class="panel"><p id="vaccine-summary" role="status">Nenhuma dose registrada</p><div class="records-table" id="vaccines-list"></div></div></section>
 
         <section class="view" id="acessos">
           <div class="page-title"><div><p class="eyebrow">CONSENTIMENTO GRANULAR</p><h1>Consentimentos</h1><p>Acessos temporários com revogação imediata e auditoria.</p></div><button class="primary-button patient-only" type="button" data-action="share">＋ Novo consentimento</button></div>

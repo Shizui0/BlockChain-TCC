@@ -7,7 +7,7 @@ MVP acadêmico de histórico médico controlado pelo paciente, com registros cl�
 ## Fluxo demonstrável
 
 1. Paciente Teste autentica-se.
-2. Cria um `Observation`, `Encounter` ou `Immunization` sintético.
+2. Cria um `Observation`, `Encounter` ou `Immunization` sintético. A carteira permite informar vacina, dose, data e instituição.
 3. O backend serializa e cifra o conteúdo com AES-256-GCM.
 4. SQLite recebe apenas `ciphertext`, IV, tag de autenticação e versão da chave.
 5. SHA-256 é calculado sobre a representação canônica do registro protegido.
@@ -41,7 +41,7 @@ O MVP utiliza SQLite por simplicidade local. O acesso está concentrado em servi
 
 ## Requisitos
 
-- Node.js 22 ou superior;
+- Node.js 22 LTS (versões 22.x; o MVP ainda não é compatível com Node.js 24);
 - npm;
 - nenhuma instalação local de PostgreSQL é necessária nesta fase.
 
@@ -125,6 +125,10 @@ npm run check  # valida sintaxe de backend, testes e frontend
 - consentimento temporário, granular e revogável;
 - eventos de auditoria sem conteúdo clínico;
 - ledger local contendo somente hashes, timestamps, permissões e referências pseudonimizadas.
+
+## Consolidação da Fase 1.1
+
+Esta base consolida a arquitetura funcional da branch `agent/medchain-core-mvp` com os fluxos de carteira de vacinação, indicadores e autorizações que evoluíram na `main`. A carteira foi adaptada para usar registros `Immunization` cifrados na API em vez do `localStorage` da interface anterior. Os comprovantes permanecem no fluxo existente de documentos cifrados, que valida tipo/tamanho e registra integridade. A branch histórica `codex/desenvolver-sistema-de-controle-de-historico-medico` foi analisada: sua interface inicial já está contida e superada por essas duas linhas, portanto não exigiu cópia adicional.
 
 ## Limitações
 

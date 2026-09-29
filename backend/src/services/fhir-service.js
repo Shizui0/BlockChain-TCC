@@ -38,6 +38,8 @@ export function recordToFhir(record, clinicalData) {
   if (record.resourceType === 'Immunization') {
     base.vaccineCode = { text: clinicalData.code ?? 'Vacina sintética' };
     base.occurrenceDateTime = clinicalData.occurrenceDateTime ?? record.createdAt;
+    if (clinicalData.dose) base.protocolApplied = [{ doseNumberString: clinicalData.dose }];
+    if (clinicalData.institution) base.location = { display: clinicalData.institution };
   }
   return base;
 }

@@ -95,9 +95,25 @@ function renderRecords() {
     : '<p class="empty-message">Nenhum registro acessível.</p>';
   filterRecords();
   const vaccines = state.records.filter((record) => record.resourceType === 'Immunization');
+  const distinctVaccines = new Set(vaccines.map((record) => record.clinicalData.code.trim().toLocaleLowerCase('pt-BR'))).size;
+  $('#vaccine-count').textContent = vaccines.length;
+  $('#vaccine-stat-summary').textContent = `${distinctVaccines} ${distinctVaccines === 1 ? 'vacina distinta' : 'vacinas distintas'}`;
+  $('#vaccine-summary').textContent = vaccines.length
+    ? `${vaccines.length} ${vaccines.length === 1 ? 'dose registrada' : 'doses registradas'} · ${distinctVaccines} ${distinctVaccines === 1 ? 'vacina distinta' : 'vacinas distintas'}`
+    : 'Nenhuma dose registrada';
   $('#vaccines-list').innerHTML = vaccines.length
-    ? vaccines.map((record) => recordMarkup(record, true)).join('')
+    ? vaccines.map((record) => vaccineMarkup(record)).join('')
     : '<p class="empty-message">Nenhuma imunização sintética acessível.</p>';
+}
+
+function vaccineMarkup(record) {
+  const data = record.clinicalData;
+  const details = [
+    data.dose ? `Dose: ${escapeHtml(data.dose)}` : null,
+    data.institution ? `Instituição: ${escapeHtml(data.institution)}` : null,
+    data.occurrenceDateTime ? formatDate(data.occurrenceDateTime) : formatDate(record.createdAt)
+  ].filter(Boolean).join(' · ');
+  return `<article class="timeline-item"><span class="event-icon immunization">✚</span><div><strong>${escapeHtml(data.code)}</strong><small>${details}</small></div><button class="text-button" type="button" data-integrity="${record.id}">Verificar hash</button></article>`;
 }
 
 function renderDocuments() {
@@ -289,6 +305,34 @@ function openRecordDialog() {
   $('#app-dialog').showModal();
 }
 
+function openVaccineDialog() {
+  if (!canWriteSelectedPatient()) {
+    toast('Selecione um paciente com consentimento de escrita ativo.', true);
+    return;
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  $('#dialog-content').innerHTML = `<h2 class="dialog-title">Registrar vacina sintética</h2><p class="dialog-description">A dose será cifrada antes de chegar ao banco. Comprovantes podem ser enviados na área Prontuários.</p><div class="field"><label for="vaccine-name">Vacina</label><input id="vaccine-name" name="code" required maxlength="160" placeholder="Ex.: Hepatite B"></div><div class="field"><label for="vaccine-dose">Dose</label><input id="vaccine-dose" name="dose" required maxlength="120" placeholder="Ex.: 1ª dose, reforço ou dose única"></div><div class="field"><label for="vaccine-date">Data da aplicação</label><input id="vaccine-date" name="occurrenceDateTime" type="date" max="${today}" required></div><div class="field"><label for="vaccine-institution">Instituição</label><input id="vaccine-institution" name="institution" required maxlength="120" placeholder="Ex.: UBS Central"></div><div class="dialog-actions"><button type="button" class="secondary-button" data-dialog-cancel>Cancelar</button><button type="submit" class="primary-button">Criptografar e salvar</button></div>`;
+  $('#dialog-form').onsubmit = async (event) => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    try {
+      await api('/api/records', { method: 'POST', body: JSON.stringify({
+        ...(state.user.role === 'PROFESSIONAL' ? { patientId: state.selectedPatientId } : {}),
+        resourceType: 'Immunization',
+        clinicalData: {
+          code: data.get('code'), dose: data.get('dose'), institution: data.get('institution'),
+          occurrenceDateTime: new Date(`${data.get('occurrenceDateTime')}T12:00:00.000Z`).toISOString(), status: 'completed'
+        }
+      }) });
+      $('#app-dialog').close();
+      await loadRecords(state.selectedPatientId);
+      if (state.user.role === 'PATIENT') await loadAudit();
+      toast('Vacina sintética cifrada e registrada com integridade.');
+    } catch (error) { toast(error.message, true); }
+  };
+  $('#app-dialog').showModal();
+}
+
 function openDocumentDialog() {
   if (!canWriteSelectedPatient()) {
     toast('Selecione um paciente com consentimento de escrita ativo.', true);
@@ -382,6 +426,7 @@ document.addEventListener('click', async (event) => {
   }
   const action = event.target.closest('[data-action]')?.dataset.action;
   if (action === 'new-record') openRecordDialog();
+  if (action === 'new-vaccine') openVaccineDialog();
   if (action === 'upload-document') openDocumentDialog();
   if (action === 'share') openConsentDialog();
   if (action === 'security') openSecurityDialog();

@@ -9,6 +9,8 @@ const clinicalDataSchema = z.object({
   value: z.union([z.string().max(500), z.number(), z.boolean()]).optional(),
   note: z.string().trim().max(1000).optional(),
   class: z.string().trim().max(40).optional(),
+  dose: z.string().trim().min(1).max(120).optional(),
+  institution: z.string().trim().min(2).max(120).optional(),
   occurrenceDateTime: z.string().datetime().optional()
 }).strict();
 
