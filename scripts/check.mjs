@@ -2,7 +2,7 @@ import { readdir } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { extname, join } from 'node:path';
 
-const roots = ['backend/src', 'backend/test', 'frontend/public'];
+const roots = ['backend/src', 'backend/test', 'frontend/public', 'scripts'];
 const files = [];
 
 async function collect(directory) {
