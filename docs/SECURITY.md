@@ -51,3 +51,15 @@ Metadados cujas chaves indiquem conteúdo clínico, diagnóstico, resultado, con
 - não copiar o banco de demonstração para ambientes reais;
 - rotacionar segredos e chaves após qualquer suspeita de exposição;
 - testar restauração e resposta a incidentes.
+
+## Chaves na Fase 2.3
+
+As chaves de banco, transferência `.medchain` e assinatura JWT devem ser distintas.
+`MEDCHAIN_TRANSFER_KEY` aceita somente Base64 canônico de 32 bytes. Gere-a com
+`npm run medchain:keygen`, copie uma única vez para um gerenciador de segredos e
+não a registre no Git ou em logs. `MEDCHAIN_TRANSFER_PREVIOUS_KEYS` e
+`MEDCHAIN_PREVIOUS_MASTER_KEYS` são keyrings opcionais de leitura histórica:
+proteja-os como segredos e remova versões antigas somente depois de confirmar que
+nenhum dado necessário depende delas. Descriptografia CLI falha com mensagem externa
+genérica; o erro interno `UNKNOWN_KEY_ID` não revela o identificador recebido.
+O fingerprint SHA-256 sem chave não substitui a autenticação AES-GCM.

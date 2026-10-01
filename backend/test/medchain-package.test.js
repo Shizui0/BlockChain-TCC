@@ -135,7 +135,7 @@ describe('pacote .medchain AES-256-GCM', () => {
       const packet = `${input}.medchain`;
       const exported = join(directory, 'restored.txt');
       await writeFile(input, SECRET_DEMO, 'utf8');
-      const environment = { ...process.env, MEDCHAIN_MASTER_KEY: TEST_MASTER_KEY, MEDCHAIN_KEY_VERSION: 'test-v1' };
+      const environment = { ...process.env, MEDCHAIN_TRANSFER_KEY: TEST_MASTER_KEY, MEDCHAIN_TRANSFER_KEY_ID: 'test-v1' };
       const encrypt = spawnSync(process.execPath, ['scripts/medchain-cli.mjs', 'encrypt', input], { cwd: process.cwd(), env: environment, encoding: 'utf8' });
       assert.equal(encrypt.status, 0, encrypt.stderr);
       assert.equal(await readFile(input, 'utf8'), SECRET_DEMO);
@@ -145,7 +145,7 @@ describe('pacote .medchain AES-256-GCM', () => {
       assert.equal(verify.status, 0, verify.stderr);
       assert.equal(verify.stdout.includes(SECRET_DEMO), false);
       const verifyWithoutKey = spawnSync(process.execPath, ['scripts/medchain-cli.mjs', 'verify', packet], {
-        cwd: process.cwd(), env: { ...environment, MEDCHAIN_MASTER_KEY: '' }, encoding: 'utf8'
+        cwd: process.cwd(), env: { ...environment, MEDCHAIN_TRANSFER_KEY: '' }, encoding: 'utf8'
       });
       assert.equal(verifyWithoutKey.status, 0, verifyWithoutKey.stderr);
       const decryptInMemory = spawnSync(process.execPath, ['scripts/medchain-cli.mjs', 'decrypt', packet], { cwd: process.cwd(), env: environment, encoding: 'utf8' });
