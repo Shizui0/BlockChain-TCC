@@ -17,6 +17,7 @@ Browser
              ├─ validação e autorização
              ├─ serviços de domínio
              │    ├─ Auth: rota + middleware de sessão JWT
+             │    ├─ KeyManagementService: validação, IDs e seleção de chaves
              │    ├─ CryptoService: AES-256-GCM e AAD canônica
              │    ├─ RecordService: prontuários e projeção FHIR
              │    ├─ DocumentService: arquivos cifrados e metadados
@@ -102,6 +103,25 @@ Buffer → AES-256-GCM (AAD técnica canônica) → pacote versionado
 ```
 
 `verifyFingerprint` valida a estrutura e compara o digest sem descriptografar; é uma verificação de corrupção, não uma prova de autoria. `decryptBuffer` exige digest válido, resolve a chave por `keyId`, verifica AES-GCM e somente então entrega o Buffer completo em memória. `format`, `version`, `packageId`, `createdAt`, `algorithm`, `keyId` e `contentType` são AAD no v2. O leitor mantém compatibilidade com pacotes v1 sem digest, usando a AAD v1.
+
+## Gestão de chaves — Fase 2.3
+
+`KeyManagementService` valida material de 256 bits, mantém o keyring em memória e
+seleciona a chave ativa para criptografar e a versão indicada no dado protegido para
+descriptografar. A CLI de pacotes usa exclusivamente `MEDCHAIN_TRANSFER_KEY` e
+`MEDCHAIN_TRANSFER_KEY_ID`; a API mantém `MEDCHAIN_MASTER_KEY` e
+`MEDCHAIN_KEY_VERSION` em keyring independente. Chaves anteriores são fornecidas
+explicitamente em `MEDCHAIN_TRANSFER_PREVIOUS_KEYS` ou
+`MEDCHAIN_PREVIOUS_MASTER_KEYS` (objetos JSON no ambiente). A troca de chave ativa
+não recriptografa dados existentes. IDs são técnicos e não secretos; valores de
+chave não são persistidos pelo serviço nem enviados no pacote.
+
+Este é um ponto de extensão para envelope encryption: uma DEK aleatória por dado
+poderá ser encapsulada por uma KEK em KMS/HSM, mantendo `keyId` como referência.
+Identidades e chaves de dispositivos poderão constituir outro domínio de chaves,
+sem compartilhar a chave de transferência ou do banco. Nesta fase não há KMS,
+chaves de dispositivo, rotação distribuída, recriptografia em lote ou recuperação
+de chaves perdidas.
 
 ## Autorização
 

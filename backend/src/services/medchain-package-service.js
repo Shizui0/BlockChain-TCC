@@ -171,7 +171,9 @@ export class MedChainPackageService {
     }
     const crypto = this.keyResolver(validated.keyId);
     if (!crypto || typeof crypto.decryptBuffer !== 'function') {
-      throw packageError('não há chave disponível para keyId.');
+      const error = packageError('não há chave disponível para keyId.');
+      error.code = 'UNKNOWN_KEY_ID';
+      throw error;
     }
     try {
       return crypto.decryptBuffer(validated, packageAad(validated));

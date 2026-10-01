@@ -54,6 +54,10 @@ node -e "console.log(require('node:crypto').randomBytes(48).toString('base64url'
 ```
 
 Copie o primeiro valor para `MEDCHAIN_MASTER_KEY` e o segundo para `JWT_SECRET` no arquivo `.env`. O `.env` é ignorado pelo Git.
+Para pacotes `.medchain`, execute `npm run medchain:keygen` e coloque esse terceiro valor,
+independente dos anteriores, em `MEDCHAIN_TRANSFER_KEY`. Configure também um
+`MEDCHAIN_TRANSFER_KEY_ID` não secreto (por exemplo, `transfer-v1`). Nunca reutilize
+a chave do banco ou o segredo JWT como chave de transferência.
 
 Depois instale exatamente as dependências do lockfile e inicie:
 
@@ -91,6 +95,7 @@ npm run medchain:encrypt -- <arquivo>              # gera <arquivo>.medchain
 npm run medchain:decrypt -- <pacote.medchain>      # valida e descriptografa somente em memória
 npm run medchain:decrypt -- <pacote.medchain> --out <arquivo> # exportação explícita
 npm run medchain:verify -- <pacote.medchain>       # fingerprint, sem descriptografar
+npm run medchain:keygen                            # gera uma nova chave de transferência
 ```
 
 ## Pacote criptografado `.medchain` — Fase 2.1
@@ -117,11 +122,21 @@ Um digest armazenado no próprio pacote detecta corrupção e divergência, mas 
 ser recalculado por quem alterar o pacote; portanto não prova autenticidade.
 `medchain:decrypt` exige também a autenticação AES-GCM para entregar o Buffer.
 
-Use uma chave de 32 bytes em `MEDCHAIN_MASTER_KEY`, como já documentado acima.
-`MEDCHAIN_KEY_VERSION` identifica a chave no pacote e `MEDCHAIN_PACKAGE_MAX_BYTES`
+Use uma chave Base64 canônica de 32 bytes em `MEDCHAIN_TRANSFER_KEY`.
+`MEDCHAIN_TRANSFER_KEY_ID` identifica a chave no pacote e `MEDCHAIN_PACKAGE_MAX_BYTES`
 limita o payload (10 MiB por padrão). A CLI não imprime chave, ciphertext ou conteúdo.
 Na descriptografia ela não cria arquivo por padrão: `--out` é uma ação explícita e
 recusa sobrescrever um destino existente.
+
+Para trocar a chave, gere outra, atribua um novo ID e mantenha as antigas em
+`MEDCHAIN_TRANSFER_PREVIOUS_KEYS` como objeto JSON `{"transfer-v1":"<Base64 antiga>"}`
+somente no ambiente/gerenciador de segredos. A leitura escolhe a chave pelo `keyId`;
+sem a chave histórica o pacote antigo não pode ser aberto. Pacotes criados antes da
+2.3 com a chave mestra exigem que essa chave seja fornecida explicitamente no keyring
+de transferência pelo `keyId` original. Não há migração automática nem fallback
+para `MEDCHAIN_MASTER_KEY`. Para registros do banco, `MEDCHAIN_KEY_VERSION` e
+`MEDCHAIN_PREVIOUS_MASTER_KEYS` exercem a mesma seleção, em keyring separado.
+Os IDs não são segredos, mas as chaves jamais devem entrar em Git, logs ou pacotes.
 
 Esta implementação processa o conteúdo inteiro em memória e não oferece streaming;
 portanto é destinada apenas a JSON, texto e arquivos pequenos ou moderados dentro do

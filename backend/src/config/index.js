@@ -23,6 +23,7 @@ export function loadConfig(overrides = {}) {
     jwtSecret: strongSecret(overrides.jwtSecret ?? process.env.JWT_SECRET, 'JWT_SECRET'),
     masterKey: required(overrides.masterKey ?? process.env.MEDCHAIN_MASTER_KEY, 'MEDCHAIN_MASTER_KEY'),
     keyVersion: overrides.keyVersion ?? process.env.MEDCHAIN_KEY_VERSION ?? 'v1',
+    previousMasterKeys: overrides.previousMasterKeys ?? process.env.MEDCHAIN_PREVIOUS_MASTER_KEYS,
     frontendOrigin: overrides.frontendOrigin ?? process.env.FRONTEND_ORIGIN ?? 'http://localhost:4173',
     secureCookies: overrides.secureCookies ?? environment === 'production',
     seedDemo: overrides.seedDemo ?? process.env.SEED_DEMO === 'true'
