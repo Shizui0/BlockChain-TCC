@@ -86,6 +86,37 @@ describe('upload cifrado de prontuários', () => {
     assert.equal(integrity.body.valid, false);
     assert.equal(integrity.body.protectedValid, false);
     assert.equal((await patient.get(`/api/documents/${created.body.document.id}/content`)).status, 409);
+    const audit = context.database.prepare(`
+      SELECT metadata_json AS metadataJson FROM audit_events
+      WHERE event_type = 'DOCUMENT_INTEGRITY_VERIFIED' AND resource_id = ? ORDER BY timestamp DESC LIMIT 1
+    `).get(created.body.document.id);
+    assert.equal(JSON.parse(audit.metadataJson).valid, false);
+  });
+
+  test('detecta hash de documento e referência no ledger adulterados', async () => {
+    const created = await upload();
+    const documentId = created.body.document.id;
+    const original = context.database.prepare(`
+      SELECT content_hash AS contentHash FROM document_integrity WHERE document_id = ?
+    `).get(documentId).contentHash;
+    context.database.prepare('UPDATE document_integrity SET content_hash = ? WHERE document_id = ?')
+      .run('0'.repeat(64), documentId);
+    const invalidDatabase = await patient.get(`/api/documents/${documentId}/integrity`);
+    assert.equal(invalidDatabase.body.valid, false);
+    assert.equal(invalidDatabase.body.contentValid, false);
+    assert.equal((await patient.get(`/api/documents/${documentId}/content`)).status, 409);
+
+    context.database.prepare('UPDATE document_integrity SET content_hash = ? WHERE document_id = ?')
+      .run(original, documentId);
+    const ledgerRow = context.database.prepare(`
+      SELECT id, payload_json AS payloadJson FROM ledger_events
+      WHERE event_type = 'DOCUMENT_HASH_REGISTERED' AND payload_json LIKE ?
+    `).get(`%${original}%`);
+    context.database.prepare('UPDATE ledger_events SET payload_json = ? WHERE id = ?')
+      .run(JSON.stringify({ ...JSON.parse(ledgerRow.payloadJson), protectedHash: 'f'.repeat(64) }), ledgerRow.id);
+    const invalidLedger = await patient.get(`/api/documents/${documentId}/integrity`);
+    assert.equal(invalidLedger.body.valid, false);
+    assert.equal(invalidLedger.body.ledgerValid, false);
   });
 
   test('rejeita conteúdo cujo MIME não corresponde a um formato permitido', async () => {

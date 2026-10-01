@@ -30,11 +30,13 @@ Prontuários aceitam somente PDF, PNG e JPEG, com validação de MIME e assinatu
 
 ## Integridade
 
-O SHA-256 cobre identificadores, metadados mínimos e todos os campos do conteúdo protegido. O hash é comparado em tempo constante e confrontado com o último evento correspondente do ledger local.
+O SHA-256 cobre identificadores, metadados mínimos e todos os campos do conteúdo protegido de registros e documentos. O hash é comparado em tempo constante e confrontado com o último evento correspondente do ledger local, incluindo algoritmo e timestamp. Divergências impedem a leitura e produzem evento de auditoria sem conteúdo clínico. A verificação de registros e documentos pela API exige autorização.
 
-Para documentos há duas provas: `content_hash` representa exatamente os bytes enviados antes da cifragem; `protected_hash` cobre a projeção técnica, os metadados cifrados e o hash do arquivo cifrado. Download e verificação falham quando qualquer prova diverge.
+Para documentos há duas provas: `content_hash` representa exatamente os bytes enviados antes da cifragem; `protected_hash` cobre a projeção técnica, os metadados cifrados e o hash do arquivo cifrado. Uma divergência bloqueia o download; a rota de verificação retorna `valid: false`.
 
-Criptografia não substitui hash de auditoria: a primeira restringe leitura e autentica o ciphertext; o segundo permite registrar uma prova determinística separada.
+O pacote `.medchain` v2 inclui um fingerprint SHA-256 da representação canônica de todos os seus campos protegidos, excluindo a própria seção `integrity`. `medchain:verify` o compara sem descriptografar. O pacote v1 continua legível, mas não possui fingerprint. O digest interno detecta corrupção; um atacante que possa editar o pacote também pode recalculá-lo. A autenticação contra alteração maliciosa é fornecida pela tag AES-GCM com AAD de toda a metadata técnica do v2.
+
+AES-GCM oferece confidencialidade e autenticação do ciphertext/AAD. SHA-256 fornece uma impressão determinística para comparação e ancoragem futura; não substitui a authTag. O ledger atual é uma tabela no mesmo SQLite, útil para detectar divergências entre registros, mas não é uma fonte independente e imutável: quem puder alterar banco e ledger pode forjar ambas as referências. Uma ancoragem distribuída/externa permanece trabalho futuro.
 
 ## Logs e auditoria
 
