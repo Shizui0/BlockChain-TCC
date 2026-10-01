@@ -1,3 +1,4 @@
+import { createHmac, hkdfSync, timingSafeEqual } from 'node:crypto';
 import { CryptoService } from './crypto-service.js';
 
 function keyError(message, code = 'MEDCHAIN_KEY_CONFIG_INVALID') {
@@ -37,14 +38,19 @@ function previousKeys(value, label) {
 
 export class KeyManagementService {
   #keys = new Map();
+  #materials = new Map();
 
   constructor({ activeKey, activeKeyId, previous = {}, allowHex = false, keyLabel = 'Chave' }) {
     this.activeKeyId = keyId(activeKeyId);
-    this.#keys.set(this.activeKeyId, new CryptoService(decodeKey(activeKey, keyLabel, allowHex), this.activeKeyId));
+    const activeMaterial = decodeKey(activeKey, keyLabel, allowHex);
+    this.#materials.set(this.activeKeyId, activeMaterial);
+    this.#keys.set(this.activeKeyId, new CryptoService(activeMaterial, this.activeKeyId));
     for (const [id, value] of Object.entries(previous)) {
       keyId(id);
       if (this.#keys.has(id)) throw keyError('Identificador de chave duplicado.');
-      this.#keys.set(id, new CryptoService(decodeKey(value, 'Chave anterior', allowHex), id));
+      const material = decodeKey(value, 'Chave anterior', allowHex);
+      this.#materials.set(id, material);
+      this.#keys.set(id, new CryptoService(material, id));
     }
     Object.freeze(this);
   }
@@ -71,6 +77,19 @@ export class KeyManagementService {
   getActiveCryptoService() { return this.#keys.get(this.activeKeyId); }
 
   resolveCryptoService(id) { return this.#keys.get(id); }
+
+  createTransferProof(message, id = this.activeKeyId) {
+    const material = this.#materials.get(id);
+    if (!material) throw keyError('Não foi possível autenticar a transferência.', 'UNKNOWN_KEY_ID');
+    const authKey = hkdfSync('sha256', material, Buffer.alloc(0), 'medchain-lan-transfer-auth-v1', 32);
+    return createHmac('sha256', authKey).update(message).digest('hex');
+  }
+
+  verifyTransferProof(message, signature, id) {
+    if (typeof signature !== 'string' || !/^[a-f0-9]{64}$/.test(signature) || !this.#materials.has(id)) return false;
+    const expected = Buffer.from(this.createTransferProof(message, id), 'hex');
+    return timingSafeEqual(expected, Buffer.from(signature, 'hex'));
+  }
 
   #forProtectedValue(value) {
     const crypto = this.resolveCryptoService(value?.keyVersion);

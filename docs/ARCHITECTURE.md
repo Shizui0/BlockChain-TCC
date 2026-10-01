@@ -123,6 +123,17 @@ sem compartilhar a chave de transferência ou do banco. Nesta fase não há KMS,
 chaves de dispositivo, rotação distribuída, recriptografia em lote ou recuperação
 de chaves perdidas.
 
+## Transporte local — Fase 2.4
+
+`medchain:send` e `medchain:receive` são processos separados da API REST.
+O remetente valida e autentica o pacote antes da transmissão. HTTPS verifica o
+certificado explicitamente confiado pelo remetente e o IP privado de destino.
+Uma prova HMAC-SHA-256, com chave derivada por HKDF da chave de transferência,
+autentica método, rota, `keyId`, timestamp, nonce e SHA-256 dos bytes enviados.
+O receptor aplica limite de tamanho, rejeita nonce repetido durante a execução,
+verifica a prova e o AES-GCM e grava apenas o pacote cifrado com nome UUID e
+criação exclusiva. Nenhum endpoint da API clínica é exposto por esse processo.
+
 ## Autorização
 
 - paciente acessa somente o próprio prontuário;

@@ -63,3 +63,16 @@ proteja-os como segredos e remova versões antigas somente depois de confirmar q
 nenhum dado necessário depende delas. Descriptografia CLI falha com mensagem externa
 genérica; o erro interno `UNKNOWN_KEY_ID` não revela o identificador recebido.
 O fingerprint SHA-256 sem chave não substitui a autenticação AES-GCM.
+
+## Transporte LAN da Fase 2.4
+
+O receptor exige TLS com certificado e chave privada fornecidos pelo operador;
+o remetente exige cópia confiável do certificado (`--ca`) e valida o nome/IP.
+Não existe opção para desabilitar a validação TLS. A chave privada TLS e a chave
+de transferência não devem ser compartilhadas no mesmo canal do pacote.
+O HMAC do pedido usa chave derivada por HKDF, evitando uso direto da chave AES
+para outra finalidade. Timestamp e nonce limitam replay em vida do processo;
+o arquivo com criação exclusiva impede sobrescrita do mesmo `packageId`.
+Isto não fornece identidade individual, autorização clínica, persistência de
+nonces, proteção contra negação de serviço em LAN hostil ou conformidade para
+dados reais. Restrinja a porta no firewall e use somente dados sintéticos.

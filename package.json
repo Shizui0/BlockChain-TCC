@@ -12,6 +12,8 @@
     "medchain:decrypt": "node scripts/medchain-cli.mjs decrypt",
     "medchain:verify": "node scripts/medchain-cli.mjs verify",
     "medchain:keygen": "node scripts/medchain-keygen.mjs",
+    "medchain:receive": "node scripts/medchain-transfer.mjs receive",
+    "medchain:send": "node scripts/medchain-transfer.mjs send",
     "test": "node --test --test-concurrency=1 backend/test/*.test.js",
     "check": "node scripts/check.mjs"
   },

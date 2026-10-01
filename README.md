@@ -96,6 +96,8 @@ npm run medchain:decrypt -- <pacote.medchain>      # valida e descriptografa som
 npm run medchain:decrypt -- <pacote.medchain> --out <arquivo> # exportação explícita
 npm run medchain:verify -- <pacote.medchain>       # fingerprint, sem descriptografar
 npm run medchain:keygen                            # gera uma nova chave de transferência
+npm run medchain:receive -- --host <IP> --port <porta> --cert <cert.pem> --key <key.pem> --out-dir <diretório>
+npm run medchain:send -- <pacote.medchain> --to https://<IP>:<porta> --ca <cert.pem>
 ```
 
 ## Pacote criptografado `.medchain` — Fase 2.1
@@ -141,6 +143,60 @@ Os IDs não são segredos, mas as chaves jamais devem entrar em Git, logs ou pac
 Esta implementação processa o conteúdo inteiro em memória e não oferece streaming;
 portanto é destinada apenas a JSON, texto e arquivos pequenos ou moderados dentro do
 limite configurado. Não use para arquivos enormes nem como armazenamento clínico de produção.
+
+## Transferência na rede local — Fase 2.4
+
+O PC A envia o pacote já cifrado por HTTPS; o PC B autentica a requisição,
+verifica fingerprint e AES-GCM em memória e grava **somente**
+`<packageId>.medchain` no diretório escolhido. Não há importação automática no
+banco nem exportação de plaintext. Ambos precisam da mesma chave de transferência
+e do mesmo `keyId` (ou da chave histórica configurada no keyring).
+
+Exemplo com IP privado `192.168.1.20` do PC B, usando apenas dados sintéticos:
+
+1. No PC B, gere um certificado TLS para esse IP com OpenSSL. Mantenha a chave
+   privada **apenas no PC B**:
+
+   ```bash
+   openssl req -x509 -newkey rsa:3072 -nodes -sha256 -days 1 -subj "/CN=192.168.1.20" -addext "subjectAltName=IP:192.168.1.20" -keyout receiver.key -out receiver.pem
+   ```
+
+2. Confira o fingerprint no PC B e copie `receiver.pem` para o PC A por um canal
+   confiável. Compare o fingerprint no PC A antes de usar; nunca copie
+   `receiver.key` para o PC A:
+
+   ```bash
+   openssl x509 -in receiver.pem -noout -fingerprint -sha256
+   ```
+
+3. Em ambos os PCs, configure `MEDCHAIN_TRANSFER_KEY` e
+   `MEDCHAIN_TRANSFER_KEY_ID` com o mesmo material/ID por um canal seguro.
+   No PC B, inicie o receptor (libere a porta apenas na rede privada):
+
+   ```bash
+   npm run medchain:receive -- --host 192.168.1.20 --port 8443 --cert receiver.pem --key receiver.key --out-dir ./incoming
+   ```
+
+4. No PC A, cifre um arquivo sintético e envie o pacote:
+
+   ```bash
+   npm run medchain:encrypt -- ./demo/sintetico.txt
+   npm run medchain:send -- ./demo/sintetico.txt.medchain --to https://192.168.1.20:8443 --ca receiver.pem
+   ```
+
+O remetente aceita somente HTTPS para um IPv4 privado explícito e valida o
+certificado e o IP via TLS, sem opção de ignorar erros de certificado. A
+requisição usa prova HMAC-SHA-256 derivada da chave de transferência por HKDF,
+com timestamp e nonce. O receptor não sobrescreve pacote existente. Erros e
+mensagens de sucesso não incluem chave nem conteúdo clínico. A exportação de
+plaintext continua exigindo `medchain:decrypt -- ... --out ...` no PC B.
+
+É uma demonstração local, não um canal assistencial: a chave compartilhada
+identifica um grupo, não um dispositivo ou profissional individual. A proteção
+contra replay em memória não persiste após reinício; a recusa de sobrescrita
+impede regravar o mesmo `packageId` enquanto o arquivo existir. Não há descoberta
+de dispositivos, fila durável, importação clínica, PKI, assinatura assimétrica,
+P2P ou garantia de entrega quando o receptor estiver desligado.
 
 ## Estrutura do projeto
 

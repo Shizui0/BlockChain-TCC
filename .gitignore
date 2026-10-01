@@ -23,5 +23,12 @@ backend/data/uploads/
 *.tgz
 *.tmp
 *.temp
+# Credenciais TLS locais da transferência.
+*.pem
+*.key
+*.p12
+*.pfx
+*.medchain
+/incoming/
 tmp/
 temp/
