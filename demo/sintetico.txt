@@ -1,0 +1,3 @@
+Exemplo inteiramente sintético para demonstrar transferência local.
+MEDCHAIN-SECRET-DEMO-92817
+Nenhuma informação sobre paciente real deve ser usada nesta demonstração.
