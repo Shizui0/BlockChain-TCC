@@ -87,7 +87,35 @@ npm start      # servidor sem watch
 npm run seed   # seed sintético idempotente
 npm test       # testes automatizados
 npm run check  # valida sintaxe de backend, testes e frontend
+npm run medchain:encrypt -- <arquivo>              # gera <arquivo>.medchain
+npm run medchain:decrypt -- <pacote.medchain>      # valida e descriptografa somente em memória
+npm run medchain:decrypt -- <pacote.medchain> --out <arquivo> # exportação explícita
 ```
+
+## Pacote criptografado `.medchain` — Fase 2.1
+
+O fluxo de arquivo da Fase 2.1 é independente dos registros persistidos na API:
+
+```text
+Dado (JSON, texto ou Buffer) → AES-256-GCM → Ciphertext + IV + AuthTag
+→ .medchain → validação + AES-GCM → dado original em memória
+```
+
+O arquivo `.medchain` é JSON versionado e contém somente metadata técnica: `format`,
+`version`, `packageId`, `createdAt`, `algorithm`, `keyId`, `contentType`, `iv`,
+`authTag` e `ciphertext`. Os valores binários são Base64; o pacote não inclui nome
+de paciente, diagnóstico, conteúdo ou outra metadata clínica em plaintext. AAD
+canônico autentica `version`, `packageId`, `algorithm`, `keyId` e `contentType`.
+
+Use uma chave de 32 bytes em `MEDCHAIN_MASTER_KEY`, como já documentado acima.
+`MEDCHAIN_KEY_VERSION` identifica a chave no pacote e `MEDCHAIN_PACKAGE_MAX_BYTES`
+limita o payload (10 MiB por padrão). A CLI não imprime chave, ciphertext ou conteúdo.
+Na descriptografia ela não cria arquivo por padrão: `--out` é uma ação explícita e
+recusa sobrescrever um destino existente.
+
+Esta implementação processa o conteúdo inteiro em memória e não oferece streaming;
+portanto é destinada apenas a JSON, texto e arquivos pequenos ou moderados dentro do
+limite configurado. Não use para arquivos enormes nem como armazenamento clínico de produção.
 
 ## Estrutura do projeto
 
