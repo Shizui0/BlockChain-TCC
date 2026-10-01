@@ -20,6 +20,11 @@ export function hashProtectedRecord(record) {
   return createHash('sha256').update(canonicalJson(protectedProjection(record))).digest('hex');
 }
 
+export function hashProtectedPackage(packet) {
+  const { integrity, ...protectedPacket } = packet;
+  return createHash('sha256').update(canonicalJson(protectedPacket)).digest('hex');
+}
+
 function sha256Buffer(value) {
   return createHash('sha256').update(value).digest('hex');
 }
@@ -48,11 +53,11 @@ export function hashProtectedDocument(document, encryptedContent) {
     .digest('hex');
 }
 
-function constantTimeEqual(left, right) {
-  if (!left || !right || left.length !== right.length) return false;
+export function constantTimeDigestEqual(left, right) {
+  if (typeof left !== 'string' || typeof right !== 'string'
+    || !/^[0-9a-f]{64}$/i.test(left) || !/^[0-9a-f]{64}$/i.test(right)) return false;
   const leftBuffer = Buffer.from(left, 'hex');
   const rightBuffer = Buffer.from(right, 'hex');
-  if (leftBuffer.length !== 32 || rightBuffer.length !== 32) return false;
   return timingSafeEqual(leftBuffer, rightBuffer);
 }
 
@@ -96,8 +101,8 @@ export class IntegrityService {
     `).get(record.id);
     if (!expected) return { valid: false, algorithm: 'SHA-256', ledgerValid: false };
     const actualHash = hashProtectedRecord(record);
-    const databaseValid = constantTimeEqual(expected.hash, actualHash);
-    const ledgerValid = this.ledger.verifyRecordHash(record.id, expected.hash);
+    const databaseValid = constantTimeDigestEqual(expected.hash, actualHash);
+    const ledgerValid = this.ledger.verifyRecordHash(record.id, expected.hash, expected.timestamp);
     return {
       valid: databaseValid && ledgerValid,
       algorithm: expected.algorithm,
@@ -127,12 +132,12 @@ export class IntegrityService {
     }
 
     const actualProtectedHash = hashProtectedDocument(document, encryptedContent);
-    const protectedValid = constantTimeEqual(expected.protectedHash, actualProtectedHash);
+    const protectedValid = constantTimeDigestEqual(expected.protectedHash, actualProtectedHash);
     let contentValid = false;
     if (protectedValid) {
       try {
         const plaintext = decryptContent();
-        contentValid = constantTimeEqual(expected.contentHash, sha256Buffer(plaintext));
+        contentValid = constantTimeDigestEqual(expected.contentHash, sha256Buffer(plaintext));
       } catch {
         contentValid = false;
       }
@@ -140,7 +145,8 @@ export class IntegrityService {
     const ledgerValid = this.ledger.verifyDocumentHashes(
       document.id,
       expected.contentHash,
-      expected.protectedHash
+      expected.protectedHash,
+      expected.timestamp
     );
     return {
       valid: protectedValid && contentValid && ledgerValid,

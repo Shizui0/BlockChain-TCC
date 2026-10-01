@@ -50,9 +50,18 @@ export class RecordService {
     };
   }
 
-  assertIntegrity(record) {
+  assertIntegrity(record, actor) {
     const integrity = this.integrity.verify(record);
-    if (!integrity.valid) throw conflict('A integridade do registro médico não pôde ser confirmada.');
+    if (!integrity.valid) {
+      this.audit.record({
+        eventType: AUDIT_EVENTS.INTEGRITY_VERIFIED,
+        actorId: actor.id,
+        patientId: record.patientId,
+        resourceId: record.id,
+        metadata: { valid: false }
+      });
+      throw conflict('A integridade do registro médico não pôde ser confirmada.');
+    }
   }
 
   create(actor, { patientId: requestedPatientId, resourceType, clinicalData }) {
@@ -102,7 +111,7 @@ export class RecordService {
       metadata: { recordCount: records.length }
     });
     return records.map((record) => {
-      this.assertIntegrity(record);
+      this.assertIntegrity(record, actor);
       return this.present(record);
     });
   }
@@ -116,7 +125,7 @@ export class RecordService {
   get(actor, recordId) {
     const record = this.findProtected(recordId);
     this.consents.assertAccess(actor, record.patientId, 'READ', record.id);
-    this.assertIntegrity(record);
+    this.assertIntegrity(record, actor);
     this.audit.record({
       eventType: AUDIT_EVENTS.RECORD_VIEWED,
       actorId: actor.id,

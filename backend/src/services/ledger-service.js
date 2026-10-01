@@ -53,7 +53,7 @@ export class LedgerService {
     return this.append('CONSENT_REVOKED', 'consent', consentId, { revokedAt });
   }
 
-  verifyRecordHash(recordId, hash) {
+  verifyRecordHash(recordId, hash, timestamp) {
     const subjectRef = pseudonymize('record', recordId);
     const row = this.database.prepare(`
       SELECT payload_json AS payloadJson
@@ -63,10 +63,15 @@ export class LedgerService {
       LIMIT 1
     `).get(subjectRef);
     if (!row) return false;
-    return JSON.parse(row.payloadJson).hash === hash;
+    try {
+      const payload = JSON.parse(row.payloadJson);
+      return payload.hash === hash && payload.algorithm === 'SHA-256' && payload.timestamp === timestamp;
+    } catch {
+      return false;
+    }
   }
 
-  verifyDocumentHashes(documentId, contentHash, protectedHash) {
+  verifyDocumentHashes(documentId, contentHash, protectedHash, timestamp) {
     const subjectRef = pseudonymize('document', documentId);
     const row = this.database.prepare(`
       SELECT payload_json AS payloadJson
@@ -76,7 +81,12 @@ export class LedgerService {
       LIMIT 1
     `).get(subjectRef);
     if (!row) return false;
-    const payload = JSON.parse(row.payloadJson);
-    return payload.contentHash === contentHash && payload.protectedHash === protectedHash;
+    try {
+      const payload = JSON.parse(row.payloadJson);
+      return payload.contentHash === contentHash && payload.protectedHash === protectedHash
+        && payload.algorithm === 'SHA-256' && payload.timestamp === timestamp;
+    } catch {
+      return false;
+    }
   }
 }

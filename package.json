@@ -10,6 +10,7 @@
     "seed": "node backend/src/db/seed-cli.js",
     "medchain:encrypt": "node scripts/medchain-cli.mjs encrypt",
     "medchain:decrypt": "node scripts/medchain-cli.mjs decrypt",
+    "medchain:verify": "node scripts/medchain-cli.mjs verify",
     "test": "node --test --test-concurrency=1 backend/test/*.test.js",
     "check": "node scripts/check.mjs"
   },

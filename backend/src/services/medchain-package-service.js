@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { canonicalJson } from '../utils/canonical-json.js';
+import { constantTimeDigestEqual, hashProtectedPackage } from './integrity-service.js';
 
 export const MEDCHAIN_PACKAGE_FORMAT = 'medchain';
-export const MEDCHAIN_PACKAGE_VERSION = 1;
+export const MEDCHAIN_PACKAGE_VERSION = 2;
 export const MEDCHAIN_PACKAGE_ALGORITHM = 'aes-256-gcm';
 export const DEFAULT_MAX_PACKAGE_BYTES = 10 * 1024 * 1024;
 
@@ -38,13 +39,72 @@ function assertString(value, field, { maxLength = 200 } = {}) {
 }
 
 export function packageAad(packet) {
-  return {
+  const aad = {
     algorithm: packet.algorithm,
     contentType: packet.contentType,
     keyId: packet.keyId,
     packageId: packet.packageId,
     version: packet.version
   };
+  if (packet.version >= 2) {
+    aad.format = packet.format;
+    aad.createdAt = packet.createdAt;
+  }
+  return aad;
+}
+
+export function validateMedChainPackage(packet, maxPayloadBytes = DEFAULT_MAX_PACKAGE_BYTES) {
+  if (!Number.isSafeInteger(maxPayloadBytes) || maxPayloadBytes < 1) {
+    throw new Error('O limite de pacote deve ser um inteiro positivo.');
+  }
+  if (!packet || typeof packet !== 'object' || Array.isArray(packet)) throw packageError('a raiz deve ser um objeto JSON.');
+  for (const field of REQUIRED_FIELDS) {
+    if (!Object.hasOwn(packet, field)) throw packageError(`campo obrigatório ausente: ${field}.`);
+  }
+  if (packet.format !== MEDCHAIN_PACKAGE_FORMAT) throw packageError('format não suportado.');
+  if (packet.version !== 1 && packet.version !== MEDCHAIN_PACKAGE_VERSION) throw packageError('versão não suportada.');
+  const requiredFields = packet.version === 1 ? REQUIRED_FIELDS : [...REQUIRED_FIELDS, 'integrity'];
+  for (const field of requiredFields) {
+    if (!Object.hasOwn(packet, field)) throw packageError(`campo obrigatório ausente: ${field}.`);
+  }
+  if (Object.keys(packet).some((field) => !requiredFields.includes(field))) {
+    throw packageError('campos não reconhecidos não são permitidos.');
+  }
+  if (packet.algorithm !== MEDCHAIN_PACKAGE_ALGORITHM) throw packageError('algoritmo não suportado.');
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(assertString(packet.packageId, 'packageId'))) {
+    throw packageError('packageId não é um UUID válido.');
+  }
+  const createdAt = assertString(packet.createdAt, 'createdAt');
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(createdAt)
+    || !Number.isFinite(Date.parse(createdAt)) || new Date(createdAt).toISOString() !== createdAt) {
+    throw packageError('createdAt não é uma data ISO válida.');
+  }
+  assertString(packet.keyId, 'keyId');
+  assertString(packet.contentType, 'contentType');
+  const iv = assertBase64(packet.iv, 'iv', 12);
+  const authTag = assertBase64(packet.authTag, 'authTag', 16);
+  const ciphertext = typeof packet.ciphertext === 'string' && packet.ciphertext.length === 0
+    ? Buffer.alloc(0)
+    : assertBase64(packet.ciphertext, 'ciphertext');
+  if (ciphertext.length > maxPayloadBytes) throw packageError('ciphertext excede o limite permitido.');
+  if (packet.version === 2) {
+    const integrity = packet.integrity;
+    if (!integrity || typeof integrity !== 'object' || Array.isArray(integrity)
+      || Object.keys(integrity).length !== 2 || integrity.algorithm !== 'SHA-256'
+      || !/^[0-9a-f]{64}$/.test(integrity.digest)) {
+      throw packageError('seção integrity inválida.');
+    }
+  }
+  return { ...packet, iv, authTag, ciphertext };
+}
+
+export function verifyMedChainFingerprint(packet, maxPayloadBytes = DEFAULT_MAX_PACKAGE_BYTES) {
+  validateMedChainPackage(packet, maxPayloadBytes);
+  if (packet.version === 1) {
+    return { valid: null, algorithm: null, digestValid: null, version: 1, legacy: true };
+  }
+  const digestValid = constantTimeDigestEqual(packet.integrity.digest, hashProtectedPackage(packet));
+  return { valid: digestValid, algorithm: 'SHA-256', digestValid, version: 2, legacy: false };
 }
 
 export class MedChainPackageService {
@@ -74,11 +134,15 @@ export class MedChainPackageService {
       contentType: assertString(contentType, 'contentType')
     };
     const protectedValue = this.crypto.encryptBuffer(plaintext, packageAad(packet));
-    return {
+    const protectedPacket = {
       ...packet,
       iv: protectedValue.iv,
       authTag: protectedValue.authTag,
       ciphertext: protectedValue.ciphertext.toString('base64')
+    };
+    return {
+      ...protectedPacket,
+      integrity: { algorithm: 'SHA-256', digest: hashProtectedPackage(protectedPacket) }
     };
   }
 
@@ -92,37 +156,19 @@ export class MedChainPackageService {
   }
 
   validate(packet) {
-    if (!packet || typeof packet !== 'object' || Array.isArray(packet)) throw packageError('a raiz deve ser um objeto JSON.');
-    for (const field of REQUIRED_FIELDS) {
-      if (!Object.hasOwn(packet, field)) throw packageError(`campo obrigatório ausente: ${field}.`);
-    }
-    if (Object.keys(packet).some((field) => !REQUIRED_FIELDS.includes(field))) {
-      throw packageError('campos não reconhecidos não são permitidos.');
-    }
-    if (packet.format !== MEDCHAIN_PACKAGE_FORMAT) throw packageError('format não suportado.');
-    if (packet.version !== MEDCHAIN_PACKAGE_VERSION) throw packageError('versão não suportada.');
-    if (packet.algorithm !== MEDCHAIN_PACKAGE_ALGORITHM) throw packageError('algoritmo não suportado.');
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(assertString(packet.packageId, 'packageId'))) {
-      throw packageError('packageId não é um UUID válido.');
-    }
-    const createdAt = assertString(packet.createdAt, 'createdAt');
-    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(createdAt)
-      || !Number.isFinite(Date.parse(createdAt)) || new Date(createdAt).toISOString() !== createdAt) {
-      throw packageError('createdAt não é uma data ISO válida.');
-    }
-    assertString(packet.keyId, 'keyId');
-    assertString(packet.contentType, 'contentType');
-    const iv = assertBase64(packet.iv, 'iv', 12);
-    const authTag = assertBase64(packet.authTag, 'authTag', 16);
-    const ciphertext = typeof packet.ciphertext === 'string' && packet.ciphertext.length === 0
-      ? Buffer.alloc(0)
-      : assertBase64(packet.ciphertext, 'ciphertext');
-    if (ciphertext.length > this.maxPayloadBytes) throw packageError('ciphertext excede o limite permitido.');
-    return { ...packet, iv, authTag, ciphertext };
+    return validateMedChainPackage(packet, this.maxPayloadBytes);
+  }
+
+  verifyFingerprint(packet) {
+    return verifyMedChainFingerprint(packet, this.maxPayloadBytes);
   }
 
   decryptBuffer(packet) {
     const validated = this.validate(packet);
+    if (packet.version === 2
+      && !constantTimeDigestEqual(packet.integrity.digest, hashProtectedPackage(packet))) {
+      throw packageError('fingerprint SHA-256 divergente.');
+    }
     const crypto = this.keyResolver(validated.keyId);
     if (!crypto || typeof crypto.decryptBuffer !== 'function') {
       throw packageError('não há chave disponível para keyId.');
