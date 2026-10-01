@@ -58,6 +58,53 @@ describe('registros cifrados e integridade', () => {
     const response = await patient.get(`/api/records/${created.body.record.id}`);
     assert.equal(response.status, 409);
     assert.equal(response.body.error.code, 'CONFLICT');
+    const audit = context.database.prepare(`
+      SELECT metadata_json AS metadataJson FROM audit_events
+      WHERE event_type = 'INTEGRITY_VERIFIED' AND resource_id = ? ORDER BY timestamp DESC LIMIT 1
+    `).get(created.body.record.id);
+    assert.equal(JSON.parse(audit.metadataJson).valid, false);
+  });
+
+  test('detecta hash armazenado ou referência do ledger adulterados', async () => {
+    const created = await patient.post('/api/records').send({
+      resourceType: 'Observation',
+      clinicalData: { code: 'Integridade sintética', value: 'não divulgar' }
+    });
+    const recordId = created.body.record.id;
+    const original = context.database.prepare('SELECT hash FROM record_integrity WHERE record_id = ?').get(recordId).hash;
+    context.database.prepare('UPDATE record_integrity SET hash = ? WHERE record_id = ?')
+      .run('0'.repeat(64), recordId);
+    const invalidDatabase = await patient.get(`/api/records/${recordId}/integrity`);
+    assert.equal(invalidDatabase.body.valid, false);
+    assert.equal(invalidDatabase.body.databaseValid, false);
+    assert.equal((await patient.get(`/api/records/${recordId}`)).status, 409);
+    assert.equal(context.database.prepare('SELECT hash FROM record_integrity WHERE record_id = ?').get(recordId).hash, '0'.repeat(64));
+
+    context.database.prepare('UPDATE record_integrity SET hash = ? WHERE record_id = ?').run(original, recordId);
+    const ledgerRow = context.database.prepare(`
+      SELECT id, payload_json AS payloadJson FROM ledger_events
+      WHERE event_type = 'RECORD_HASH_REGISTERED' AND payload_json LIKE ?
+    `).get(`%${original}%`);
+    context.database.prepare('UPDATE ledger_events SET payload_json = ? WHERE id = ?')
+      .run(JSON.stringify({ ...JSON.parse(ledgerRow.payloadJson), hash: 'f'.repeat(64) }), ledgerRow.id);
+    const invalidLedger = await patient.get(`/api/records/${recordId}/integrity`);
+    assert.equal(invalidLedger.body.valid, false);
+    assert.equal(invalidLedger.body.databaseValid, true);
+    assert.equal(invalidLedger.body.ledgerValid, false);
+  });
+
+  test('integridade exige autorização e não retorna conteúdo clínico', async () => {
+    const secret = 'MEDCHAIN-INTEGRITY-SECRET-391';
+    const created = await patient.post('/api/records').send({
+      resourceType: 'Observation', clinicalData: { code: 'Sintético', value: secret }
+    });
+    const recordId = created.body.record.id;
+    const doctor = await loginAgent(context.app, DEMO_USERS.doctor.email);
+    const denied = await doctor.get(`/api/records/${recordId}/integrity`);
+    assert.equal(denied.status, 403);
+    const allowed = await patient.get(`/api/records/${recordId}/integrity`);
+    assert.equal(allowed.status, 200);
+    assert.equal(JSON.stringify(allowed.body).includes(secret), false);
   });
 
   test('preserva os campos da carteira de vacinação cifrados e produz FHIR Immunization', async () => {

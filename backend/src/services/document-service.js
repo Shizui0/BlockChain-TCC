@@ -233,7 +233,16 @@ export class DocumentService {
       encryptedContent,
       () => this.decryptContent(document, encryptedContent)
     );
-    if (!integrity.valid) throw conflict('A integridade do prontuário não pôde ser confirmada.');
+    if (!integrity.valid) {
+      this.audit.record({
+        eventType: AUDIT_EVENTS.DOCUMENT_INTEGRITY_VERIFIED,
+        actorId: actor.id,
+        patientId: document.patientId,
+        resourceId: document.id,
+        metadata: { valid: false, algorithm: integrity.algorithm }
+      });
+      throw conflict('A integridade do prontuário não pôde ser confirmada.');
+    }
     const metadata = this.present(document);
     const content = this.decryptContent(document, encryptedContent);
     this.audit.record({

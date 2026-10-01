@@ -90,6 +90,7 @@ npm run check  # valida sintaxe de backend, testes e frontend
 npm run medchain:encrypt -- <arquivo>              # gera <arquivo>.medchain
 npm run medchain:decrypt -- <pacote.medchain>      # valida e descriptografa somente em memória
 npm run medchain:decrypt -- <pacote.medchain> --out <arquivo> # exportação explícita
+npm run medchain:verify -- <pacote.medchain>       # fingerprint, sem descriptografar
 ```
 
 ## Pacote criptografado `.medchain` — Fase 2.1
@@ -103,9 +104,18 @@ Dado (JSON, texto ou Buffer) → AES-256-GCM → Ciphertext + IV + AuthTag
 
 O arquivo `.medchain` é JSON versionado e contém somente metadata técnica: `format`,
 `version`, `packageId`, `createdAt`, `algorithm`, `keyId`, `contentType`, `iv`,
-`authTag` e `ciphertext`. Os valores binários são Base64; o pacote não inclui nome
+`authTag` e `ciphertext`. Pacotes v2 incluem `integrity: { algorithm: "SHA-256", digest }`.
+O digest é SHA-256 da serialização canônica de todos os campos do pacote, exceto
+`integrity`. Os valores binários são Base64; o pacote não inclui nome
 de paciente, diagnóstico, conteúdo ou outra metadata clínica em plaintext. AAD
-canônico autentica `version`, `packageId`, `algorithm`, `keyId` e `contentType`.
+canônico autentica `format`, `version`, `packageId`, `createdAt`, `algorithm`,
+`keyId` e `contentType` no v2. Pacotes v1 continuam legíveis com sua AAD original,
+mas não possuem fingerprint interno.
+
+`medchain:verify` compara somente o fingerprint do v2, sem chave e sem abrir o conteúdo.
+Um digest armazenado no próprio pacote detecta corrupção e divergência, mas pode
+ser recalculado por quem alterar o pacote; portanto não prova autenticidade.
+`medchain:decrypt` exige também a autenticação AES-GCM para entregar o Buffer.
 
 Use uma chave de 32 bytes em `MEDCHAIN_MASTER_KEY`, como já documentado acima.
 `MEDCHAIN_KEY_VERSION` identifica a chave no pacote e `MEDCHAIN_PACKAGE_MAX_BYTES`

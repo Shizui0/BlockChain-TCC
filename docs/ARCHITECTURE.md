@@ -77,6 +77,8 @@ JSON clínico validado
 
 AES-256-GCM fornece confidencialidade e autenticação do ciphertext. SHA-256 fornece uma impressão determinística para comparar integridade e registrar uma prova fora do armazenamento clínico.
 
+Na leitura, o serviço compara a projeção canônica do registro com `record_integrity` e com o evento correspondente em `ledger_events`. Falhas impedem a apresentação do dado e são auditadas. O ledger permanece no mesmo SQLite; portanto não equivale a um trust anchor independente.
+
 ## Upload de prontuário
 
 ```text
@@ -90,6 +92,16 @@ multipart PDF/PNG/JPEG validado e limitado
 ```
 
 O nome original e a descrição ficam dentro do payload de metadados cifrado. O download só ocorre após autorização e confirmação das provas de integridade.
+
+## Pacote `.medchain` v2
+
+```text
+Buffer → AES-256-GCM (AAD técnica canônica) → pacote versionado
+       → SHA-256 canônico do pacote, sem o campo integrity
+       → { integrity: { algorithm: "SHA-256", digest } }
+```
+
+`verifyFingerprint` valida a estrutura e compara o digest sem descriptografar; é uma verificação de corrupção, não uma prova de autoria. `decryptBuffer` exige digest válido, resolve a chave por `keyId`, verifica AES-GCM e somente então entrega o Buffer completo em memória. `format`, `version`, `packageId`, `createdAt`, `algorithm`, `keyId` e `contentType` são AAD no v2. O leitor mantém compatibilidade com pacotes v1 sem digest, usando a AAD v1.
 
 ## Autorização
 
