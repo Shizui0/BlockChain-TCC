@@ -94,7 +94,8 @@ export class DocumentService {
     const metadata = this.crypto.decrypt({
       ciphertext: document.metadataCiphertext,
       iv: document.metadataIv,
-      authTag: document.metadataAuthTag
+      authTag: document.metadataAuthTag,
+      keyVersion: document.keyVersion
     }, this.metadataContext(document));
     return {
       id: document.id,
@@ -214,7 +215,8 @@ export class DocumentService {
     return this.crypto.decryptBuffer({
       ciphertext: encryptedContent,
       iv: document.fileIv,
-      authTag: document.fileAuthTag
+      authTag: document.fileAuthTag,
+      keyVersion: document.keyVersion
     }, this.fileContext(document));
   }
 

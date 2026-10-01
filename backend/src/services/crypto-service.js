@@ -12,9 +12,13 @@ function decodeMasterKey(value) {
 }
 
 export class CryptoService {
+  #key;
+
   constructor(masterKey, keyVersion = 'v1') {
-    this.key = decodeMasterKey(masterKey);
+    this.#key = Buffer.isBuffer(masterKey) && masterKey.length === 32
+      ? Buffer.from(masterKey) : decodeMasterKey(masterKey);
     this.keyVersion = keyVersion;
+    Object.freeze(this);
   }
 
   encrypt(value, context) {
@@ -61,7 +65,7 @@ export class CryptoService {
 
   createCipher(context) {
     const iv = randomBytes(12);
-    const cipher = createCipheriv('aes-256-gcm', this.key, iv);
+    const cipher = createCipheriv('aes-256-gcm', this.#key, iv);
     cipher.setAAD(Buffer.from(canonicalJson(context)));
     return { cipher, iv };
   }
@@ -69,7 +73,7 @@ export class CryptoService {
   createDecipher(protectedValue, context) {
     const decipher = createDecipheriv(
       'aes-256-gcm',
-      this.key,
+      this.#key,
       Buffer.from(protectedValue.iv, 'base64')
     );
     decipher.setAAD(Buffer.from(canonicalJson(context)));

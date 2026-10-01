@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { readFile, stat, writeFile } from 'node:fs/promises';
 import { extname, resolve } from 'node:path';
-import { CryptoService } from '../backend/src/services/crypto-service.js';
+import { KeyManagementService } from '../backend/src/services/key-management-service.js';
 import { DEFAULT_MAX_PACKAGE_BYTES, MedChainPackageService, verifyMedChainFingerprint } from '../backend/src/services/medchain-package-service.js';
 
 function usage() {
@@ -32,10 +32,11 @@ function configuredMaxPayloadBytes() {
 }
 
 function loadService(maxPayloadBytes) {
-  if (!process.env.MEDCHAIN_MASTER_KEY) throw new Error('MEDCHAIN_MASTER_KEY deve ser definido no ambiente ou .env.');
+  const keys = KeyManagementService.fromTransferEnvironment();
   return new MedChainPackageService({
-    cryptoService: new CryptoService(process.env.MEDCHAIN_MASTER_KEY, process.env.MEDCHAIN_KEY_VERSION ?? 'v1'),
-    keyId: process.env.MEDCHAIN_KEY_VERSION ?? 'v1',
+    cryptoService: keys.getActiveCryptoService(),
+    keyId: keys.activeKeyId,
+    keyResolver: (id) => keys.resolveCryptoService(id),
     maxPayloadBytes
   });
 }
@@ -94,8 +95,15 @@ async function main() {
 }
 
 main().catch((error) => {
-  const safeMessage = error.code === 'MEDCHAIN_PACKAGE_INVALID' || !error.code
-    ? error.message : 'não foi possível ler ou gravar o arquivo solicitado.';
+  if (process.argv[2] === 'decrypt') {
+    console.error('Não foi possível descriptografar.');
+    process.exitCode = 1;
+    return;
+  }
+  const safeMessage = error.code === 'MEDCHAIN_KEY_CONFIG_INVALID'
+    ? 'configuração de chave de transferência inválida.'
+    : error.code === 'MEDCHAIN_PACKAGE_INVALID' || !error.code
+      ? error.message : 'não foi possível ler ou gravar o arquivo solicitado.';
   console.error(`Falha no pacote .medchain: ${safeMessage}`);
   process.exitCode = 1;
 });
